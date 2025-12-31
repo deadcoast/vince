@@ -36,5 +36,11 @@ def main(
     pass
 
 
+# Import and register commands
+from vince.commands.slap import cmd_slap
+
+app.command(name="slap")(cmd_slap)
+
+
 if __name__ == "__main__":
     app()

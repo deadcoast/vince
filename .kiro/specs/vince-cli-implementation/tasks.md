@@ -245,8 +245,8 @@ This implementation plan creates the vince CLI Python application following the 
   - Ensure output formatting works correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 15. Implement slap command
-  - [ ] 15.1 Implement cmd_slap function
+- [x] 15. Implement slap command
+  - [x] 15.1 Implement cmd_slap function
     - Create vince/commands/slap.py
     - Add path argument with Typer validation
     - Add extension option with all supported flags
@@ -254,11 +254,11 @@ This implementation plan creates the vince CLI Python application following the 
     - Implement command logic with validation, state check, persistence
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7_
 
-  - [ ] 15.2 Register slap command
+  - [x] 15.2 Register slap command
     - Import and register in main.py
     - _Requirements: 8.1_
 
-  - [ ] 15.3 Write unit tests for slap command
+  - [x] 15.3 Write unit tests for slap command
     - Test successful slap without -set (pending state)
     - Test successful slap with -set (active state + offer)
     - Test error cases (invalid path, existing default)
