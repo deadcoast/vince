@@ -264,19 +264,19 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error cases (invalid path, existing default)
     - _Requirements: 8.5, 8.6, 8.7_
 
-- [ ] 16. Implement chop command
-  - [ ] 16.1 Implement cmd_chop function
+- [x] 16. Implement chop command
+  - [x] 16.1 Implement cmd_chop function
     - Create vince/commands/chop.py
     - Add extension option
     - Add -forget and -vb flags
     - Implement command logic
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 16.2 Register chop command
+  - [x] 16.2 Register chop command
     - Import and register in main.py
     - _Requirements: 9.1_
 
-  - [ ] 16.3 Write unit tests for chop command
+  - [x] 16.3 Write unit tests for chop command
     - Test successful chop with -forget
     - Test error case (no default exists)
     - _Requirements: 9.4, 9.5_

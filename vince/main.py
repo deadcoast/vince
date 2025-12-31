@@ -38,8 +38,10 @@ def main(
 
 # Import and register commands
 from vince.commands.slap import cmd_slap
+from vince.commands.chop import cmd_chop
 
 app.command(name="slap")(cmd_slap)
+app.command(name="chop")(cmd_chop)
 
 
 if __name__ == "__main__":
