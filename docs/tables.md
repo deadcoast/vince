@@ -35,6 +35,18 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | `offer` | ofr | ofr01 | Custom shortcut/alias for defaults |
 | `path` | pa | pa01 | File system location of application |
 | `step` | st | st01 | Sequential action in a workflow |
+| `error` | err | err01 | Error condition with code, message, and recovery |
+| `error_code` | ec | ec01 | Unique identifier for error condition (VE###) |
+| `state` | sta | sta01 | Lifecycle state of an entity (default or offer) |
+| `transition` | trn | trn01 | State change triggered by a command |
+| `config` | cfg | cfg01 | Configuration option for CLI behavior |
+| `schema` | sch | sch01 | JSON schema defining data structure |
+| `severity` | sev | sev01 | Error severity level (error, warning, info) |
+| `recovery` | rec | rec01 | Recommended action to resolve an error |
+| `validation` | val | val01 | Rule for checking data correctness |
+| `persistence` | per | per01 | Data storage and retrieval mechanism |
+| `backup` | bak | bak01 | Copy of data file for recovery purposes |
+| `theme` | thm | thm01 | Console color scheme (default, dark, light) |
 
 ## COMMANDS
 
@@ -112,6 +124,51 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | `<path/to/application/app.exe>` | path | File system path to the application executable |
 | `<file_extension>` | file_extension | The file extension to target (e.g., .md, .py) |
 | `<offer_id>` | offer | Custom shortcut/alias identifier |
+
+## ERRORS
+
+| code | sid | category | message | severity |
+| --- | --- | --- | --- | --- |
+| VE101 | ve101 | Input | Invalid path: {path} does not exist | error |
+| VE102 | ve102 | Input | Invalid extension: {ext} is not supported | error |
+| VE103 | ve103 | Input | Invalid offer_id: {id} does not match pattern | error |
+| VE104 | ve104 | Input | Offer not found: {id} does not exist | error |
+| VE105 | ve105 | Input | Invalid list subsection: {section} | error |
+| VE201 | ve201 | File | File not found: {path} | error |
+| VE202 | ve202 | File | Permission denied: cannot access {path} | error |
+| VE203 | ve203 | File | Data file corrupted: {file} | error |
+| VE301 | ve301 | State | Default already exists for {ext} | warning |
+| VE302 | ve302 | State | No default set for {ext} | warning |
+| VE303 | ve303 | State | Offer already exists: {id} | warning |
+| VE304 | ve304 | State | Cannot reject: offer {id} is in use | error |
+| VE401 | ve401 | Config | Invalid config option: {key} | error |
+| VE402 | ve402 | Config | Config file malformed: {file} | error |
+| VE501 | ve501 | System | Unexpected error: {message} | error |
+
+## STATES
+
+| id | sid | entity | description |
+| --- | --- | --- | --- |
+| `none` | def-none | default | No default exists for the extension |
+| `pending` | def-pend | default | Default identified but not yet set as active |
+| `active` | def-actv | default | Default is set and actively used |
+| `removed` | def-rmvd | default | Default was removed but record retained |
+| `none` | off-none | offer | No offer exists with the given ID |
+| `created` | off-crtd | offer | Offer created but not yet used |
+| `active` | off-actv | offer | Offer has been used at least once |
+| `rejected` | off-rjct | offer | Offer was rejected/removed |
+
+## CONFIG_OPTIONS
+
+| key | sid | type | default | description |
+| --- | --- | --- | --- | --- |
+| `version` | cfg-ver | string | Required | Schema version in semver format |
+| `data_dir` | cfg-dir | string | `~/.vince` | Data storage directory path |
+| `verbose` | cfg-vb | boolean | `false` | Enable verbose output by default |
+| `color_theme` | cfg-thm | enum | `default` | Console color theme (default/dark/light) |
+| `backup_enabled` | cfg-bak | boolean | `true` | Enable automatic backups before writes |
+| `max_backups` | cfg-max | integer | `5` | Maximum number of backup files to retain (0-100) |
+| `confirm_destructive` | cfg-cfm | boolean | `true` | Require confirmation for destructive operations |
 
 ## RULES
 
