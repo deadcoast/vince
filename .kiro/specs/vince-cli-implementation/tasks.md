@@ -28,14 +28,14 @@ This implementation plan creates the vince CLI Python application following the 
   - Run `uv run python -m vince --help` and verify output
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Implement error system
-  - [ ] 3.1 Create VinceError base class
+- [x] 3. Implement error system
+  - [x] 3.1 Create VinceError base class
     - Create vince/errors.py with VinceError dataclass
     - Add code, message, recovery fields
     - Implement __str__ method
     - _Requirements: 2.1_
 
-  - [ ] 3.2 Implement Input errors (VE1xx)
+  - [x] 3.2 Implement Input errors (VE1xx)
     - Add InvalidPathError (VE101)
     - Add InvalidExtensionError (VE102)
     - Add InvalidOfferIdError (VE103)
@@ -43,53 +43,53 @@ This implementation plan creates the vince CLI Python application following the 
     - Add InvalidSubsectionError (VE105)
     - _Requirements: 2.3_
 
-  - [ ] 3.3 Implement File errors (VE2xx)
+  - [x] 3.3 Implement File errors (VE2xx)
     - Add FileNotFoundError (VE201)
     - Add PermissionDeniedError (VE202)
     - Add DataCorruptedError (VE203)
     - _Requirements: 2.4_
 
-  - [ ] 3.4 Implement State errors (VE3xx)
+  - [x] 3.4 Implement State errors (VE3xx)
     - Add DefaultExistsError (VE301)
     - Add NoDefaultError (VE302)
     - Add OfferExistsError (VE303)
     - Add OfferInUseError (VE304)
     - _Requirements: 2.5_
 
-  - [ ] 3.5 Implement Config and System errors (VE4xx, VE5xx)
+  - [x] 3.5 Implement Config and System errors (VE4xx, VE5xx)
     - Add InvalidConfigOptionError (VE401)
     - Add ConfigMalformedError (VE402)
     - Add UnexpectedError (VE501)
     - _Requirements: 2.6, 2.7_
 
-  - [ ] 3.6 Implement handle_error function
+  - [x] 3.6 Implement handle_error function
     - Display formatted error with Rich
     - Show recovery message if available
     - Exit with code 1
     - _Requirements: 2.8_
 
-  - [ ] 3.7 Write property test for error class completeness
+  - [x] 3.7 Write property test for error class completeness
     - **Property 12: Error Class Completeness**
     - Test all VinceError subclasses have required attributes
     - **Validates: Requirements 2.2**
 
-- [ ] 4. Checkpoint - Verify error system
+- [x] 4. Checkpoint - Verify error system
   - Ensure all error classes are defined
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement validation system
-  - [ ] 5.1 Implement path validator
+- [-] 5. Implement validation system
+  - [x] 5.1 Implement path validator
     - Create vince/validation/path.py
     - Implement validate_path() with exists, is_file, executable checks
     - Raise InvalidPathError or PermissionDeniedError on failure
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 5.2 Write property test for path validation
+  - [x] 5.2 Write property test for path validation
     - **Property 1: Path Validation Correctness**
     - Test valid paths pass, invalid paths raise correct errors
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 
-  - [ ] 5.3 Implement extension validator
+  - [-] 5.3 Implement extension validator
     - Create vince/validation/extension.py
     - Define EXTENSION_PATTERN and SUPPORTED_EXTENSIONS
     - Implement validate_extension() with pattern and support checks
