@@ -331,36 +331,36 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error cases (invalid offer_id, offer exists)
     - _Requirements: 12.5, 12.6, 12.7_
 
-- [ ] 20. Implement reject command
-  - [ ] 20.1 Implement cmd_reject function
+- [x] 20. Implement reject command
+  - [x] 20.1 Implement cmd_reject function
     - Create vince/commands/reject.py
     - Add offer_id argument
     - Add "." flag for complete-delete and -vb flag
     - Implement command logic
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
 
-  - [ ] 20.2 Register reject command
+  - [x] 20.2 Register reject command
     - Import and register in main.py
     - _Requirements: 13.1_
 
-  - [ ] 20.3 Write unit tests for reject command
+  - [x] 20.3 Write unit tests for reject command
     - Test successful reject
     - Test error case (offer not found)
     - _Requirements: 13.4, 13.5_
 
-- [ ] 21. Implement list command
-  - [ ] 21.1 Implement cmd_list function
+- [x] 21. Implement list command
+  - [x] 21.1 Implement cmd_list function
     - Create vince/commands/list_cmd.py
     - Add subsection option (-app, -cmd, -ext, -def, -off, -all)
     - Add extension filter option and -vb flag
     - Implement display logic with Rich tables
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
 
-  - [ ] 21.2 Register list command
+  - [x] 21.2 Register list command
     - Import and register in main.py
     - _Requirements: 14.1_
 
-  - [ ] 21.3 Write unit tests for list command
+  - [x] 21.3 Write unit tests for list command
     - Test list -def, list -off, list -all
     - Test error case (invalid subsection)
     - _Requirements: 14.4, 14.5, 14.6, 14.7_
