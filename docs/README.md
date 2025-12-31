@@ -6,10 +6,18 @@ Vince is a simple, sopthisticated CLI created with elevated visual ASCII UI deli
 
 ## FRAMEWORK
 
-- [Python](XXXXXXXXXXXXXXXXXXXXXXX)
-  CLI: [Typer](XXXXXXXXXXXXXXXXXXXXXXX)
-  CLI: [Rich](XXXXXXXXXXXXXXXXXXXXXXX)
-  PKG: [UV](XXXXXXXXXXXXXXXXXXXXXXX)
+- [Python](https://www.python.org/)
+  CLI: [Typer](https://typer.tiangolo.com/)
+  CLI: [Rich](https://rich.readthedocs.io/)
+  PKG: [UV](https://docs.astral.sh/uv/)
+
+## DOCUMENTATION
+
+For detailed information about the `vince` CLI, see the following documentation:
+
+- [Overview](overview.md) - System design, commands, flags, and rules
+- [Examples](examples.md) - Practical usage examples for all commands
+- [Tables](tables.md) - Complete reference tables for all definitions
 
 ## INSTALLATION
 

@@ -21,18 +21,18 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | id | sid | rid | description |
 | --- | --- | --- | --- |
 | `example` | eg | eg01 | Sample or instance used for illustration |
-| `application` | app | app01 | Program or executable to set as default |
-| `extension` | ext | ext01 | File type suffix (e.g., .md, .py) |
+| `application` | ap | ap01 | Program or executable to set as default |
+| `extension` | ex | ex01 | File type suffix (e.g., .md, .py) |
 | `default` | dlt | dlt01 | The preferred application for a file type |
 | `short_id` | sid | sid01 | Abbreviated identifier (2-4 characters) |
 | `long_id` | lid | lid01 | Full-length identifier |
 | `id` | id | id01 | Main identification of an object |
 | `number` | num | num01 | Numerical identification variable |
 | `rule_id` | rid | rid01 | Rule identifier combining sid + number |
-| `command` | cmd | cmd01 | CLI action verb |
+| `command` | cm | cm01 | CLI action verb |
 | `flag` | fl | fl01 | CLI modifier with - or -- prefix |
 | `operator` | op | op01 | CLI symbol with special meaning |
-| `offer` | off | off01 | Custom shortcut/alias for defaults |
+| `offer` | ofr | ofr01 | Custom shortcut/alias for defaults |
 | `path` | pa | pa01 | File system location of application |
 | `step` | st | st01 | Sequential action in a workflow |
 
