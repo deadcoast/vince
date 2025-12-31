@@ -298,18 +298,18 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error case (default exists)
     - _Requirements: 10.4, 10.5_
 
-- [ ] 18. Implement forget command
-  - [ ] 18.1 Implement cmd_forget function
+- [x] 18. Implement forget command
+  - [x] 18.1 Implement cmd_forget function
     - Create vince/commands/forget.py
     - Add extension option and -vb flag
     - Implement command logic
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [ ] 18.2 Register forget command
+  - [x] 18.2 Register forget command
     - Import and register in main.py
     - _Requirements: 11.1_
 
-  - [ ] 18.3 Write unit tests for forget command
+  - [x] 18.3 Write unit tests for forget command
     - Test successful forget
     - Test error case (no default)
     - _Requirements: 11.3, 11.4_
