@@ -620,3 +620,439 @@ class TestRealDocumentation:
         
         result = validate_heading_hierarchy(content, "examples.md")
         assert result.is_valid, f"examples.md heading hierarchy: {result.errors}"
+
+
+# =============================================================================
+# Property 11: API Documentation Completeness
+# Validates: Requirements 1.1, 1.2, 1.3, 1.4
+# Feature: python-integration-preparation
+# =============================================================================
+
+from validate_docs import (
+    validate_api_completeness,
+    validate_schema_completeness,
+    validate_error_catalog,
+    validate_state_transitions,
+    validate_new_table_cross_references,
+    extract_errors_from_tables,
+    extract_states_from_tables,
+    extract_config_options_from_tables,
+)
+
+
+@st.composite
+def complete_api_command(draw):
+    """Generate API documentation for a command with all required elements."""
+    cmd = draw(st.sampled_from(['slap', 'chop', 'set', 'forget', 'offer', 'reject', 'list']))
+    
+    return f"""# API Documentation
+
+## Command Interfaces
+
+### {cmd}
+
+Description of the {cmd} command.
+
+#### Function Signature
+
+```python
+@app.command(name="{cmd}")
+def cmd_{cmd}(
+    path: Path = Argument(..., help="Path to application"),
+    verbose: bool = Option(False, "-vb", help="Verbose output"),
+) -> None:
+    \"\"\"Command description.\"\"\"
+    ...
+```
+
+#### Parameters
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `path` | `Path` | Required | Path to application |
+| `verbose` | `bool` | `False` | Enable verbose output |
+
+#### Return Type
+
+Returns `None`. Output is displayed via Rich console.
+
+#### Raised Exceptions
+
+| Error Code | Condition | Message |
+| --- | --- | --- |
+| `VE101` | Path does not exist | Invalid path |
+"""
+
+
+@st.composite
+def incomplete_api_command(draw):
+    """Generate API documentation missing required elements."""
+    cmd = draw(st.sampled_from(['slap', 'chop', 'set', 'forget', 'offer', 'reject', 'list']))
+    
+    # Missing function signature, parameters table, return type, or exceptions
+    return f"""# API Documentation
+
+## Command Interfaces
+
+### {cmd}
+
+Description of the {cmd} command without proper documentation.
+
+Some text but no function signature, parameter table, return type, or exceptions.
+"""
+
+
+class TestAPICompleteness:
+    """Feature: python-integration-preparation, Property 1: API Documentation Completeness"""
+    
+    @given(content=complete_api_command())
+    @settings(max_examples=100)
+    def test_complete_api_passes(self, content):
+        """Complete API documentation should pass validation."""
+        result = validate_api_completeness(content, "api.md")
+        # Check that the documented command has no errors
+        cmd_errors = [e for e in result.errors if "missing" in e.message.lower()]
+        # We expect errors for the 6 other commands not documented
+        assert len([e for e in cmd_errors if "is missing from API" in e.message]) == 6
+    
+    @given(content=incomplete_api_command())
+    @settings(max_examples=100)
+    def test_incomplete_api_fails(self, content):
+        """Incomplete API documentation should fail validation."""
+        result = validate_api_completeness(content, "api.md")
+        # Should have errors for missing elements
+        assert len(result.errors) > 0, "Should detect missing API elements"
+    
+    def test_real_api_md(self):
+        """Test against actual api.md file."""
+        api_path = Path(__file__).parent.parent / "docs" / "api.md"
+        if not api_path.exists():
+            pytest.skip("api.md not found")
+        
+        content = api_path.read_text()
+        result = validate_api_completeness(content, "api.md")
+        assert result.is_valid, f"api.md should be complete: {result.errors}"
+
+
+# =============================================================================
+# Property 12: Schema Completeness
+# Validates: Requirements 2.4, 2.5, 2.7
+# Feature: python-integration-preparation
+# =============================================================================
+
+@st.composite
+def complete_schema_doc(draw):
+    """Generate schema documentation with all required elements."""
+    schema = draw(st.sampled_from(['defaults', 'offers', 'config']))
+    
+    return f"""# Data Model Schemas
+
+## {schema.title()} Schema
+
+Description of the {schema} schema.
+
+### JSON Schema Definition
+
+```json
+{{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Vince {schema.title()}",
+  "type": "object",
+  "properties": {{
+    "version": {{
+      "type": "string",
+      "pattern": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+$"
+    }},
+    "data": {{
+      "type": "array",
+      "minLength": 0
+    }}
+  }},
+  "required": ["version"]
+}}
+```
+
+### Example {schema}.json
+
+```json
+{{
+  "version": "1.0.0",
+  "data": []
+}}
+```
+"""
+
+
+@st.composite
+def incomplete_schema_doc(draw):
+    """Generate schema documentation missing required elements."""
+    schema = draw(st.sampled_from(['defaults', 'offers', 'config']))
+    
+    return f"""# Data Model Schemas
+
+## {schema.title()} Schema
+
+Description without proper schema definition or example.
+"""
+
+
+class TestSchemaCompleteness:
+    """Feature: python-integration-preparation, Property 2: Schema Completeness"""
+    
+    @given(content=complete_schema_doc())
+    @settings(max_examples=100)
+    def test_complete_schema_passes(self, content):
+        """Complete schema documentation should pass for documented schema."""
+        result = validate_schema_completeness(content, "schemas.md")
+        # We expect errors for the 2 other schemas not documented
+        missing_schema_errors = [e for e in result.errors if "is missing from schemas" in e.message]
+        assert len(missing_schema_errors) == 2
+    
+    @given(content=incomplete_schema_doc())
+    @settings(max_examples=100)
+    def test_incomplete_schema_fails(self, content):
+        """Incomplete schema documentation should fail validation."""
+        result = validate_schema_completeness(content, "schemas.md")
+        assert len(result.errors) > 0, "Should detect missing schema elements"
+    
+    def test_real_schemas_md(self):
+        """Test against actual schemas.md file."""
+        schemas_path = Path(__file__).parent.parent / "docs" / "schemas.md"
+        if not schemas_path.exists():
+            pytest.skip("schemas.md not found")
+        
+        content = schemas_path.read_text()
+        result = validate_schema_completeness(content, "schemas.md")
+        assert result.is_valid, f"schemas.md should be complete: {result.errors}"
+
+
+# =============================================================================
+# Property 13: Error Catalog Completeness
+# Validates: Requirements 3.1, 3.3, 3.4, 3.5
+# Feature: python-integration-preparation
+# =============================================================================
+
+@st.composite
+def valid_error_entry(draw):
+    """Generate a valid error catalog entry."""
+    category = draw(st.sampled_from(['Input', 'File', 'State', 'Config', 'System']))
+    category_ranges = {
+        'Input': (101, 105),
+        'File': (201, 203),
+        'State': (301, 304),
+        'Config': (401, 402),
+        'System': (501, 501),
+    }
+    min_val, max_val = category_ranges[category]
+    code_num = draw(st.integers(min_value=min_val, max_value=max_val))
+    
+    return f"""# Error Catalog
+
+## Error Registry
+
+### {category} Errors (VE{code_num // 100}xx)
+
+| Code | Message Template | Severity | Recovery Action |
+| --- | --- | --- | --- |
+| VE{code_num} | Error message for {code_num} | error | Recovery action here |
+"""
+
+
+@st.composite
+def invalid_error_entry(draw):
+    """Generate an error catalog entry with invalid format."""
+    return """# Error Catalog
+
+## Error Registry
+
+### Input Errors (VE1xx)
+
+| Code | Message Template | Severity | Recovery Action |
+| --- | --- | --- | --- |
+| VE999 | Invalid code outside range | error | Recovery |
+"""
+
+
+class TestErrorCatalog:
+    """Feature: python-integration-preparation, Property 3: Error Catalog Completeness"""
+    
+    @given(content=valid_error_entry())
+    @settings(max_examples=100)
+    def test_valid_error_passes(self, content):
+        """Valid error entries should pass validation."""
+        result = validate_error_catalog(content, "errors.md")
+        # Should have no format or range errors
+        format_errors = [e for e in result.errors if "format" in e.message.lower() or "range" in e.message.lower()]
+        assert len(format_errors) == 0, f"Valid errors should pass: {format_errors}"
+    
+    @given(content=invalid_error_entry())
+    @settings(max_examples=100)
+    def test_invalid_error_fails(self, content):
+        """Invalid error entries should fail validation."""
+        result = validate_error_catalog(content, "errors.md")
+        range_errors = [e for e in result.errors if "range" in e.message.lower() or "outside" in e.message.lower()]
+        assert len(range_errors) > 0, "Should detect out-of-range error codes"
+    
+    def test_real_errors_md(self):
+        """Test against actual errors.md file."""
+        errors_path = Path(__file__).parent.parent / "docs" / "errors.md"
+        if not errors_path.exists():
+            pytest.skip("errors.md not found")
+        
+        content = errors_path.read_text()
+        result = validate_error_catalog(content, "errors.md")
+        assert result.is_valid, f"errors.md should be complete: {result.errors}"
+
+
+# =============================================================================
+# Property 14: State Transition Completeness
+# Validates: Requirements 5.3, 5.4
+# Feature: python-integration-preparation
+# =============================================================================
+
+@st.composite
+def complete_transition_doc(draw):
+    """Generate state transition documentation with all required elements."""
+    from_state = draw(st.sampled_from(['none', 'pending', 'active', 'removed']))
+    to_state = draw(st.sampled_from(['pending', 'active', 'removed']))
+    
+    return f"""# State Machine Documentation
+
+## Default Lifecycle
+
+### Default State Transitions
+
+| From | To | Trigger | Conditions | Side Effects |
+| --- | --- | --- | --- | --- |
+| {from_state} | {to_state} | slap -set | Path exists | Creates entry |
+"""
+
+
+@st.composite
+def incomplete_transition_doc(draw):
+    """Generate state transition documentation missing required elements."""
+    return """# State Machine Documentation
+
+## Default Lifecycle
+
+### Default State Transitions
+
+| From | To | Trigger | Conditions | Side Effects |
+| --- | --- | --- | --- | --- |
+| none | active | | | |
+"""
+
+
+class TestStateTransitions:
+    """Feature: python-integration-preparation, Property 4: State Transition Completeness"""
+    
+    @given(content=complete_transition_doc())
+    @settings(max_examples=100)
+    def test_complete_transition_passes(self, content):
+        """Complete transition documentation should pass validation."""
+        result = validate_state_transitions(content, "states.md")
+        assert result.is_valid, f"Complete transitions should pass: {result.errors}"
+    
+    @given(content=incomplete_transition_doc())
+    @settings(max_examples=100)
+    def test_incomplete_transition_fails(self, content):
+        """Incomplete transition documentation should fail validation."""
+        result = validate_state_transitions(content, "states.md")
+        missing_errors = [e for e in result.errors if "missing" in e.message.lower()]
+        assert len(missing_errors) > 0, "Should detect missing transition elements"
+    
+    def test_real_states_md(self):
+        """Test against actual states.md file."""
+        states_path = Path(__file__).parent.parent / "docs" / "states.md"
+        if not states_path.exists():
+            pytest.skip("states.md not found")
+        
+        content = states_path.read_text()
+        result = validate_state_transitions(content, "states.md")
+        assert result.is_valid, f"states.md should be complete: {result.errors}"
+
+
+# =============================================================================
+# Property 15: Cross-Reference Completeness for New Tables
+# Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5
+# Feature: python-integration-preparation
+# =============================================================================
+
+class TestNewTableCrossReferences:
+    """Feature: python-integration-preparation, Property 6: Cross-Reference Completeness"""
+    
+    def test_errors_in_tables(self):
+        """Error codes in errors.md should be in tables.md ERRORS table."""
+        tables_content = """# Tables
+
+## ERRORS
+
+| code | sid | category | message | severity |
+| --- | --- | --- | --- | --- |
+| VE101 | ve101 | Input | Invalid path | error |
+| VE201 | ve201 | File | File not found | error |
+"""
+        errors_content = "Error VE101 and VE201 are documented."
+        
+        result = validate_new_table_cross_references(
+            errors_content, "", "", tables_content, "cross-refs"
+        )
+        assert result.is_valid, f"Matching errors should pass: {result.errors}"
+    
+    def test_missing_errors_in_tables(self):
+        """Error codes not in tables.md should be flagged."""
+        tables_content = """# Tables
+
+## ERRORS
+
+| code | sid | category | message | severity |
+| --- | --- | --- | --- | --- |
+| VE101 | ve101 | Input | Invalid path | error |
+"""
+        errors_content = "Error VE101 and VE999 are documented."
+        
+        result = validate_new_table_cross_references(
+            errors_content, "", "", tables_content, "cross-refs"
+        )
+        missing_errors = [e for e in result.errors if "VE999" in e.message]
+        assert len(missing_errors) > 0, "Should detect missing error in tables"
+    
+    def test_states_in_tables(self):
+        """State sids in states.md should be in tables.md STATES table."""
+        tables_content = """# Tables
+
+## STATES
+
+| id | sid | entity | description |
+| --- | --- | --- | --- |
+| none | def-none | default | No default exists |
+| active | def-actv | default | Default is active |
+"""
+        states_content = "States def-none and def-actv are documented."
+        
+        result = validate_new_table_cross_references(
+            "", states_content, "", tables_content, "cross-refs"
+        )
+        assert result.is_valid, f"Matching states should pass: {result.errors}"
+    
+    def test_real_cross_references(self):
+        """Test cross-references against actual documentation files."""
+        docs_dir = Path(__file__).parent.parent / "docs"
+        
+        tables_path = docs_dir / "tables.md"
+        errors_path = docs_dir / "errors.md"
+        states_path = docs_dir / "states.md"
+        config_path = docs_dir / "config.md"
+        
+        if not all(p.exists() for p in [tables_path, errors_path, states_path]):
+            pytest.skip("Required documentation files not found")
+        
+        tables_content = tables_path.read_text()
+        errors_content = errors_path.read_text()
+        states_content = states_path.read_text()
+        config_content = config_path.read_text() if config_path.exists() else ""
+        
+        result = validate_new_table_cross_references(
+            errors_content, states_content, config_content, tables_content, "cross-refs"
+        )
+        assert result.is_valid, f"Cross-references should be valid: {result.errors}"

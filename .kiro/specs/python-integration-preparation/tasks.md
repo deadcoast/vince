@@ -395,61 +395,61 @@ This implementation plan creates the expanded documentation suite for Python int
     - Update descriptions for each document
     - *Requirements: 10.5*
 
-- [ ] 20. Extend validation script
-  - [ ] 20.1 Add API completeness validator
+- [x] 20. Extend validation script
+  - [x] 20.1 Add API completeness validator
     - Validate all commands have function signatures
     - Validate parameters, returns, exceptions documented
     - **Property 1: API Documentation Completeness**
     - **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
 
-  - [ ] 20.2 Write property test for API completeness
+  - [x] 20.2 Write property test for API completeness
     - Test that any command has complete documentation
     - *Requirements: 1.1, 1.2, 1.3, 1.4*
 
-  - [ ] 20.3 Add schema completeness validator
+  - [x] 20.3 Add schema completeness validator
     - Validate schemas have required fields
     - Validate constraints are defined
     - Validate examples exist
     - **Property 2: Schema Completeness**
     - **Validates: Requirements 2.4, 2.5, 2.7**
 
-  - [ ] 20.4 Write property test for schema completeness
+  - [x] 20.4 Write property test for schema completeness
     - Test that any schema has complete definition
     - *Requirements: 2.4, 2.5, 2.7*
 
-  - [ ] 20.5 Add error catalog validator
+  - [x] 20.5 Add error catalog validator
     - Validate error code format (VE###)
     - Validate category ranges
     - Validate required fields
     - **Property 3: Error Catalog Completeness**
     - **Validates: Requirements 3.1, 3.3, 3.4, 3.5**
 
-  - [ ] 20.6 Write property test for error catalog
+  - [x] 20.6 Write property test for error catalog
     - Test that any error code is complete and valid
     - *Requirements: 3.1, 3.3, 3.4, 3.5*
 
-  - [ ] 20.7 Add state transition validator
+  - [x] 20.7 Add state transition validator
     - Validate transitions have triggers and conditions
     - Validate results and side effects documented
     - **Property 4: State Transition Completeness**
     - **Validates: Requirements 5.3, 5.4**
 
-  - [ ] 20.8 Write property test for state transitions
+  - [x] 20.8 Write property test for state transitions
     - Test that any transition is complete
     - *Requirements: 5.3, 5.4*
 
-  - [ ] 20.9 Add cross-reference validator for new tables
+  - [x] 20.9 Add cross-reference validator for new tables
     - Validate ERRORS table entries
     - Validate STATES table entries
     - Validate CONFIG_OPTIONS table entries
     - **Property 6: Cross-Reference Completeness**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
-  - [ ] 20.10 Write property test for cross-references
+  - [x] 20.10 Write property test for cross-references
     - Test that any new definition is in tables.md
     - *Requirements: 10.1, 10.2, 10.3, 10.4, 10.5*
 
-- [ ] 21. Final validation checkpoint
+- [x] 21. Final validation checkpoint
   - Run `python validate_docs.py --all` and verify 0 errors
   - Ensure all property-based tests pass
   - Verify all new documents are complete

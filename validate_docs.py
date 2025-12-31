@@ -930,6 +930,665 @@ def validate_modular_syntax(content: str, filename: str) -> ValidationResult:
 
 
 # =============================================================================
+# Property 11: API Documentation Completeness Validator
+# Validates: Requirements 1.1, 1.2, 1.3, 1.4
+# Feature: python-integration-preparation
+# =============================================================================
+
+def validate_api_completeness(content: str, filename: str) -> ValidationResult:
+    """
+    Validate that API documentation is complete for all commands.
+    
+    Rules:
+    - All commands must have function signatures with type hints
+    - All parameters must be documented with types and descriptions
+    - Return types must be documented
+    - Raised exceptions must be documented
+    
+    Property 1: For any command defined in the system, the api.md document SHALL
+    contain a complete function specification including: function signature with
+    type hints, all parameters with types and descriptions, return type
+    documentation, and raised exceptions with conditions.
+    """
+    result = ValidationResult()
+    
+    # Expected commands from the vince CLI
+    expected_commands = {'slap', 'chop', 'set', 'forget', 'offer', 'reject', 'list'}
+    
+    lines = content.split('\n')
+    in_code_block = False
+    code_block_lang = ""
+    
+    # Track documented commands and their completeness
+    documented_commands: dict[str, dict[str, bool]] = {}
+    current_command = None
+    current_section = None
+    
+    # Patterns for detecting command sections and documentation elements
+    command_section_pattern = re.compile(r'^###\s+(\w+)\s*$')
+    subsection_pattern = re.compile(r'^####\s+(.+)\s*$')
+    function_sig_pattern = re.compile(r'def\s+cmd_(\w+)\s*\(')
+    param_table_header = re.compile(r'\|\s*Parameter\s*\|')
+    return_type_pattern = re.compile(r'####\s+Return\s+Type')
+    exceptions_pattern = re.compile(r'####\s+Raised\s+Exceptions')
+    
+    for line_num, line in enumerate(lines, 1):
+        stripped = line.strip()
+        
+        # Track code blocks
+        if stripped.startswith('```'):
+            if not in_code_block:
+                in_code_block = True
+                code_block_lang = stripped[3:].strip()
+            else:
+                in_code_block = False
+                code_block_lang = ""
+            continue
+        
+        # Check for command section headers (### slap, ### chop, etc.)
+        match = command_section_pattern.match(stripped)
+        if match:
+            cmd_name = match.group(1).lower()
+            if cmd_name in expected_commands:
+                current_command = cmd_name
+                if current_command not in documented_commands:
+                    documented_commands[current_command] = {
+                        'has_signature': False,
+                        'has_parameters': False,
+                        'has_return_type': False,
+                        'has_exceptions': False,
+                        'line': line_num
+                    }
+            continue
+        
+        # Check for subsections within a command
+        subsection_match = subsection_pattern.match(stripped)
+        if subsection_match:
+            current_section = subsection_match.group(1).lower()
+            if current_command:
+                if 'return' in current_section:
+                    documented_commands[current_command]['has_return_type'] = True
+                elif 'exception' in current_section or 'raised' in current_section:
+                    documented_commands[current_command]['has_exceptions'] = True
+            continue
+        
+        # Check for function signature in code blocks
+        if in_code_block and code_block_lang == 'python' and current_command:
+            sig_match = function_sig_pattern.search(line)
+            if sig_match:
+                documented_commands[current_command]['has_signature'] = True
+        
+        # Check for parameter table
+        if current_command and param_table_header.search(line):
+            documented_commands[current_command]['has_parameters'] = True
+    
+    # Validate completeness for each expected command
+    for cmd in expected_commands:
+        if cmd not in documented_commands:
+            result.add_error(
+                filename, None, "1.1",
+                f"Command '{cmd}' is missing from API documentation"
+            )
+        else:
+            cmd_info = documented_commands[cmd]
+            if not cmd_info['has_signature']:
+                result.add_error(
+                    filename, cmd_info['line'], "1.1",
+                    f"Command '{cmd}' missing function signature with type hints"
+                )
+            if not cmd_info['has_parameters']:
+                result.add_error(
+                    filename, cmd_info['line'], "1.2",
+                    f"Command '{cmd}' missing parameter documentation table"
+                )
+            if not cmd_info['has_return_type']:
+                result.add_error(
+                    filename, cmd_info['line'], "1.3",
+                    f"Command '{cmd}' missing return type documentation"
+                )
+            if not cmd_info['has_exceptions']:
+                result.add_error(
+                    filename, cmd_info['line'], "1.4",
+                    f"Command '{cmd}' missing raised exceptions documentation"
+                )
+    
+    return result
+
+
+# =============================================================================
+# Property 12: Schema Completeness Validator
+# Validates: Requirements 2.4, 2.5, 2.7
+# Feature: python-integration-preparation
+# =============================================================================
+
+def validate_schema_completeness(content: str, filename: str) -> ValidationResult:
+    """
+    Validate that JSON schemas are complete with all required elements.
+    
+    Rules:
+    - Schemas must define required and optional fields with types
+    - Schemas must define validation constraints (min/max, patterns, enums)
+    - Schemas must include example JSON documents
+    
+    Property 2: For any JSON schema defined in schemas.md, it SHALL contain:
+    all required and optional field definitions with types, validation
+    constraints (min/max, patterns, enums), and at least one example JSON document.
+    """
+    result = ValidationResult()
+    
+    # Expected schemas
+    expected_schemas = {'defaults', 'offers', 'config'}
+    
+    lines = content.split('\n')
+    in_code_block = False
+    code_block_lang = ""
+    code_block_content = []
+    
+    # Track documented schemas
+    documented_schemas: dict[str, dict[str, bool]] = {}
+    current_schema = None
+    
+    # Patterns
+    schema_section_pattern = re.compile(r'^##\s+(\w+)\s+Schema', re.IGNORECASE)
+    example_section_pattern = re.compile(r'^###\s+Example', re.IGNORECASE)
+    
+    for line_num, line in enumerate(lines, 1):
+        stripped = line.strip()
+        
+        # Track code blocks
+        if stripped.startswith('```'):
+            if not in_code_block:
+                in_code_block = True
+                code_block_lang = stripped[3:].strip()
+                code_block_content = []
+            else:
+                # End of code block - analyze content
+                if current_schema and code_block_lang == 'json':
+                    block_text = '\n'.join(code_block_content)
+                    
+                    # Check if it's a schema definition
+                    if '"$schema"' in block_text:
+                        documented_schemas[current_schema]['has_schema_def'] = True
+                        
+                        # Check for type definitions
+                        if '"type"' in block_text:
+                            documented_schemas[current_schema]['has_types'] = True
+                        
+                        # Check for constraints
+                        if any(c in block_text for c in ['"pattern"', '"enum"', '"minimum"', '"maximum"', '"minLength"', '"maxLength"']):
+                            documented_schemas[current_schema]['has_constraints'] = True
+                        
+                        # Check for required fields definition
+                        if '"required"' in block_text:
+                            documented_schemas[current_schema]['has_required'] = True
+                    
+                    # Check if it's an example (no $schema, has actual data)
+                    elif '"version"' in block_text and '"$schema"' not in block_text:
+                        documented_schemas[current_schema]['has_example'] = True
+                
+                in_code_block = False
+                code_block_lang = ""
+            continue
+        
+        if in_code_block:
+            code_block_content.append(line)
+            continue
+        
+        # Check for schema section headers
+        match = schema_section_pattern.match(stripped)
+        if match:
+            schema_name = match.group(1).lower()
+            if schema_name in expected_schemas:
+                current_schema = schema_name
+                if current_schema not in documented_schemas:
+                    documented_schemas[current_schema] = {
+                        'has_schema_def': False,
+                        'has_types': False,
+                        'has_constraints': False,
+                        'has_required': False,
+                        'has_example': False,
+                        'line': line_num
+                    }
+    
+    # Validate completeness for each expected schema
+    for schema in expected_schemas:
+        if schema not in documented_schemas:
+            result.add_error(
+                filename, None, "2.4",
+                f"Schema '{schema}' is missing from schemas documentation"
+            )
+        else:
+            schema_info = documented_schemas[schema]
+            if not schema_info['has_schema_def']:
+                result.add_error(
+                    filename, schema_info['line'], "2.4",
+                    f"Schema '{schema}' missing JSON schema definition"
+                )
+            if not schema_info['has_types']:
+                result.add_error(
+                    filename, schema_info['line'], "2.4",
+                    f"Schema '{schema}' missing field type definitions"
+                )
+            if not schema_info['has_constraints']:
+                result.add_error(
+                    filename, schema_info['line'], "2.5",
+                    f"Schema '{schema}' missing validation constraints"
+                )
+            if not schema_info['has_example']:
+                result.add_error(
+                    filename, schema_info['line'], "2.7",
+                    f"Schema '{schema}' missing example JSON document"
+                )
+    
+    return result
+
+
+# =============================================================================
+# Property 13: Error Catalog Completeness Validator
+# Validates: Requirements 3.1, 3.3, 3.4, 3.5
+# Feature: python-integration-preparation
+# =============================================================================
+
+def validate_error_catalog(content: str, filename: str) -> ValidationResult:
+    """
+    Validate that error catalog is complete and follows conventions.
+    
+    Rules:
+    - Error codes must follow VE### format
+    - Error codes must fall within category ranges
+    - All errors must have message, severity, and recovery action
+    
+    Property 3: For any error code defined in errors.md, it SHALL: follow the
+    VE### format, include a message template and severity level, include a
+    recovery action, and fall within its category's code range.
+    """
+    result = ValidationResult()
+    
+    # Expected error code ranges by category
+    category_ranges = {
+        'Input': (100, 199),
+        'File': (200, 299),
+        'State': (300, 399),
+        'Config': (400, 499),
+        'System': (500, 599),
+    }
+    
+    lines = content.split('\n')
+    in_code_block = False
+    in_table = False
+    table_headers: list[str] = []
+    
+    # Track documented errors
+    documented_errors: dict[str, dict] = {}
+    current_category = None
+    
+    # Patterns
+    error_code_pattern = re.compile(r'^VE(\d{3})$')
+    category_section_pattern = re.compile(r'^###\s+(\w+)\s+Errors', re.IGNORECASE)
+    
+    for line_num, line in enumerate(lines, 1):
+        stripped = line.strip()
+        
+        if stripped.startswith('```'):
+            in_code_block = not in_code_block
+            continue
+        
+        if in_code_block:
+            continue
+        
+        # Check for category section headers
+        cat_match = category_section_pattern.match(stripped)
+        if cat_match:
+            current_category = cat_match.group(1)
+            in_table = False
+            table_headers = []
+            continue
+        
+        # Parse error tables
+        if stripped.startswith('|') and stripped.endswith('|'):
+            cells = [c.strip() for c in stripped.split('|')[1:-1]]
+            
+            if not in_table:
+                # Header row
+                in_table = True
+                table_headers = [h.lower() for h in cells]
+            elif '---' in stripped:
+                # Separator row
+                continue
+            else:
+                # Data row
+                if len(cells) >= len(table_headers):
+                    row_data = dict(zip(table_headers, cells))
+                    
+                    # Extract error code
+                    code = row_data.get('code', '')
+                    code_match = error_code_pattern.match(code)
+                    
+                    if code_match:
+                        error_num = int(code_match.group(1))
+                        documented_errors[code] = {
+                            'code': code,
+                            'number': error_num,
+                            'category': current_category,
+                            'has_message': bool(row_data.get('message template', row_data.get('message', ''))),
+                            'has_severity': bool(row_data.get('severity', '')),
+                            'has_recovery': bool(row_data.get('recovery action', row_data.get('recovery', ''))),
+                            'line': line_num
+                        }
+        elif in_table and not stripped.startswith('|'):
+            in_table = False
+            table_headers = []
+    
+    # Validate each documented error
+    for code, error_info in documented_errors.items():
+        # Validate format
+        if not error_code_pattern.match(code):
+            result.add_error(
+                filename, error_info['line'], "3.1",
+                f"Error code '{code}' does not follow VE### format"
+            )
+        
+        # Validate category range
+        if error_info['category'] and error_info['category'] in category_ranges:
+            min_val, max_val = category_ranges[error_info['category']]
+            if not (min_val <= error_info['number'] <= max_val):
+                result.add_error(
+                    filename, error_info['line'], "3.5",
+                    f"Error code '{code}' ({error_info['number']}) outside {error_info['category']} range ({min_val}-{max_val})"
+                )
+        
+        # Validate required fields
+        if not error_info['has_message']:
+            result.add_error(
+                filename, error_info['line'], "3.3",
+                f"Error code '{code}' missing message template"
+            )
+        if not error_info['has_severity']:
+            result.add_error(
+                filename, error_info['line'], "3.3",
+                f"Error code '{code}' missing severity level"
+            )
+        if not error_info['has_recovery']:
+            result.add_error(
+                filename, error_info['line'], "3.4",
+                f"Error code '{code}' missing recovery action"
+            )
+    
+    return result
+
+
+# =============================================================================
+# Property 14: State Transition Completeness Validator
+# Validates: Requirements 5.3, 5.4
+# Feature: python-integration-preparation
+# =============================================================================
+
+def validate_state_transitions(content: str, filename: str) -> ValidationResult:
+    """
+    Validate that state transitions are completely documented.
+    
+    Rules:
+    - Transitions must have triggering command documented
+    - Transitions must have conditions documented
+    - Transitions must have resulting state documented
+    - Transitions must have side effects documented
+    
+    Property 4: For any state transition documented in states.md, it SHALL
+    include: the triggering command, transition conditions, resulting state,
+    and any side effects.
+    """
+    result = ValidationResult()
+    
+    lines = content.split('\n')
+    in_code_block = False
+    in_table = False
+    table_headers: list[str] = []
+    
+    # Track documented transitions
+    documented_transitions: list[dict] = []
+    current_entity = None
+    
+    # Patterns
+    transition_section_pattern = re.compile(r'^###\s+(\w+)\s+State\s+Transitions', re.IGNORECASE)
+    entity_section_pattern = re.compile(r'^##\s+(\w+)\s+Lifecycle', re.IGNORECASE)
+    
+    for line_num, line in enumerate(lines, 1):
+        stripped = line.strip()
+        
+        if stripped.startswith('```'):
+            in_code_block = not in_code_block
+            continue
+        
+        if in_code_block:
+            continue
+        
+        # Check for entity lifecycle sections
+        entity_match = entity_section_pattern.match(stripped)
+        if entity_match:
+            current_entity = entity_match.group(1).lower()
+            continue
+        
+        # Parse transition tables
+        if stripped.startswith('|') and stripped.endswith('|'):
+            cells = [c.strip() for c in stripped.split('|')[1:-1]]
+            
+            if not in_table:
+                # Check if this is a transition table by looking at headers
+                header_text = ' '.join(cells).lower()
+                if 'from' in header_text and 'to' in header_text:
+                    in_table = True
+                    table_headers = [h.lower() for h in cells]
+            elif '---' in stripped:
+                # Separator row
+                continue
+            else:
+                # Data row
+                if len(cells) >= len(table_headers):
+                    row_data = dict(zip(table_headers, cells))
+                    
+                    documented_transitions.append({
+                        'from': row_data.get('from', ''),
+                        'to': row_data.get('to', ''),
+                        'trigger': row_data.get('trigger', ''),
+                        'conditions': row_data.get('conditions', ''),
+                        'side_effects': row_data.get('side effects', row_data.get('side_effects', '')),
+                        'entity': current_entity,
+                        'line': line_num
+                    })
+        elif in_table and not stripped.startswith('|'):
+            in_table = False
+            table_headers = []
+    
+    # Validate each documented transition
+    for trans in documented_transitions:
+        if not trans['from']:
+            result.add_error(
+                filename, trans['line'], "5.3",
+                f"State transition missing 'from' state"
+            )
+        if not trans['to']:
+            result.add_error(
+                filename, trans['line'], "5.3",
+                f"State transition missing 'to' state"
+            )
+        if not trans['trigger']:
+            result.add_error(
+                filename, trans['line'], "5.3",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing trigger command"
+            )
+        if not trans['conditions']:
+            result.add_error(
+                filename, trans['line'], "5.3",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing conditions"
+            )
+        if not trans['side_effects']:
+            result.add_error(
+                filename, trans['line'], "5.4",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing side effects"
+            )
+    
+    return result
+
+
+# =============================================================================
+# Property 15: Cross-Reference Completeness for New Tables
+# Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5
+# Feature: python-integration-preparation
+# =============================================================================
+
+def extract_errors_from_tables(tables_content: str) -> set[str]:
+    """Extract all error codes from the ERRORS table in tables.md."""
+    errors = set()
+    lines = tables_content.split('\n')
+    in_errors_section = False
+    in_table = False
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        if stripped.startswith('## ERRORS'):
+            in_errors_section = True
+            continue
+        elif stripped.startswith('## ') and in_errors_section:
+            in_errors_section = False
+            continue
+        
+        if in_errors_section and stripped.startswith('|') and stripped.endswith('|'):
+            if '---' in stripped:
+                in_table = True
+                continue
+            if in_table:
+                cells = [c.strip() for c in stripped.split('|')[1:-1]]
+                if cells and cells[0].startswith('VE'):
+                    errors.add(cells[0])
+    
+    return errors
+
+
+def extract_states_from_tables(tables_content: str) -> set[str]:
+    """Extract all state IDs from the STATES table in tables.md."""
+    states = set()
+    lines = tables_content.split('\n')
+    in_states_section = False
+    in_table = False
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        if stripped.startswith('## STATES'):
+            in_states_section = True
+            continue
+        elif stripped.startswith('## ') and in_states_section:
+            in_states_section = False
+            continue
+        
+        if in_states_section and stripped.startswith('|') and stripped.endswith('|'):
+            if '---' in stripped:
+                in_table = True
+                continue
+            if in_table:
+                cells = [c.strip() for c in stripped.split('|')[1:-1]]
+                if cells and len(cells) >= 2:
+                    # sid is typically second column
+                    states.add(cells[1])
+    
+    return states
+
+
+def extract_config_options_from_tables(tables_content: str) -> set[str]:
+    """Extract all config option keys from the CONFIG_OPTIONS table in tables.md."""
+    options = set()
+    lines = tables_content.split('\n')
+    in_config_section = False
+    in_table = False
+    
+    for line in lines:
+        stripped = line.strip()
+        
+        if stripped.startswith('## CONFIG_OPTIONS'):
+            in_config_section = True
+            continue
+        elif stripped.startswith('## ') and in_config_section:
+            in_config_section = False
+            continue
+        
+        if in_config_section and stripped.startswith('|') and stripped.endswith('|'):
+            if '---' in stripped:
+                in_table = True
+                continue
+            if in_table:
+                cells = [c.strip().strip('`') for c in stripped.split('|')[1:-1]]
+                if cells:
+                    options.add(cells[0])
+    
+    return options
+
+
+def validate_new_table_cross_references(
+    errors_content: str,
+    states_content: str,
+    config_content: str,
+    tables_content: str,
+    filename: str
+) -> ValidationResult:
+    """
+    Validate cross-references between new documents and tables.md.
+    
+    Property 6: For any new definition introduced in the expanded documentation
+    (errors, states, config options), there SHALL be a corresponding entry in
+    the appropriate table in tables.md.
+    """
+    result = ValidationResult()
+    
+    # Extract definitions from tables.md
+    table_errors = extract_errors_from_tables(tables_content)
+    table_states = extract_states_from_tables(tables_content)
+    table_config = extract_config_options_from_tables(tables_content)
+    
+    # Extract error codes from errors.md
+    error_code_pattern = re.compile(r'VE\d{3}')
+    doc_errors = set(error_code_pattern.findall(errors_content))
+    
+    # Check errors cross-reference
+    for error in doc_errors:
+        if error not in table_errors:
+            result.add_error(
+                filename, None, "10.2",
+                f"Error code '{error}' in errors.md not found in tables.md ERRORS table"
+            )
+    
+    # Extract state sids from states.md
+    state_sid_pattern = re.compile(r'(def-\w+|off-\w+)')
+    doc_states = set(state_sid_pattern.findall(states_content))
+    
+    # Check states cross-reference
+    for state in doc_states:
+        if state not in table_states:
+            result.add_error(
+                filename, None, "10.4",
+                f"State '{state}' in states.md not found in tables.md STATES table"
+            )
+    
+    # Extract config keys from config.md (look for keys in tables)
+    config_key_pattern = re.compile(r'`(\w+)`\s*\|')
+    doc_config = set()
+    for match in config_key_pattern.finditer(config_content):
+        key = match.group(1)
+        if key not in ['Option', 'Type', 'Default', 'Description', 'key', 'type', 'default']:
+            doc_config.add(key)
+    
+    # Check config cross-reference
+    for option in doc_config:
+        if option not in table_config and option not in ['version']:
+            result.add_warning(
+                filename, None, "10.3",
+                f"Config option '{option}' in config.md may not be in tables.md CONFIG_OPTIONS table"
+            )
+    
+    return result
+
+
+# =============================================================================
 # Main Validation Functions
 # =============================================================================
 
@@ -954,6 +1613,16 @@ def validate_file(filepath: Path, tables_definitions: dict[str, set[str]] = None
     result.merge(validate_rule_format(content, filename))
     result.merge(validate_modular_syntax(content, filename))
     
+    # New validators for expanded documentation
+    if filepath.name == 'api.md':
+        result.merge(validate_api_completeness(content, filename))
+    elif filepath.name == 'schemas.md':
+        result.merge(validate_schema_completeness(content, filename))
+    elif filepath.name == 'errors.md':
+        result.merge(validate_error_catalog(content, filename))
+    elif filepath.name == 'states.md':
+        result.merge(validate_state_transitions(content, filename))
+    
     # Cross-reference validation requires tables definitions
     if tables_definitions:
         result.merge(validate_cross_references(content, filename, tables_definitions))
@@ -972,6 +1641,7 @@ def validate_all_docs(docs_dir: Path) -> ValidationResult:
     # First, extract definitions from tables.md (SSOT)
     tables_path = docs_dir / 'tables.md'
     tables_definitions = {}
+    tables_content = ""
     
     if tables_path.exists():
         tables_content = tables_path.read_text()
@@ -979,8 +1649,11 @@ def validate_all_docs(docs_dir: Path) -> ValidationResult:
     else:
         result.add_error("tables.md", None, "FILE", "tables.md not found - cannot validate cross-references")
     
-    # Validate each documentation file
-    doc_files = ['tables.md', 'overview.md', 'examples.md', 'README.md']
+    # Validate each documentation file (original + new)
+    doc_files = [
+        'tables.md', 'overview.md', 'examples.md', 'README.md',
+        'api.md', 'schemas.md', 'errors.md', 'config.md', 'states.md', 'testing.md'
+    ]
     
     for doc_file in doc_files:
         filepath = docs_dir / doc_file
@@ -989,6 +1662,21 @@ def validate_all_docs(docs_dir: Path) -> ValidationResult:
             result.merge(file_result)
         else:
             result.add_warning(str(filepath), None, "FILE", f"Documentation file not found: {doc_file}")
+    
+    # Validate cross-references between new documents and tables.md
+    if tables_content:
+        errors_path = docs_dir / 'errors.md'
+        states_path = docs_dir / 'states.md'
+        config_path = docs_dir / 'config.md'
+        
+        errors_content = errors_path.read_text() if errors_path.exists() else ""
+        states_content = states_path.read_text() if states_path.exists() else ""
+        config_content = config_path.read_text() if config_path.exists() else ""
+        
+        if errors_content or states_content or config_content:
+            result.merge(validate_new_table_cross_references(
+                errors_content, states_content, config_content, tables_content, "cross-refs"
+            ))
     
     return result
 
