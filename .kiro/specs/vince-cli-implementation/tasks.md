@@ -112,12 +112,12 @@ This implementation plan creates the vince CLI Python application following the 
     - Test valid offer_ids pass, invalid ones raise errors
     - **Validates: Requirements 3.8, 3.9, 3.10**
 
-- [ ] 6. Checkpoint - Verify validation system
+- [x] 6. Checkpoint - Verify validation system
   - Ensure all validators work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement persistence layer
-  - [ ] 7.1 Implement base persistence functions
+- [x] 7. Implement persistence layer
+  - [x] 7.1 Implement base persistence functions
     - Create vince/persistence/base.py
     - Implement atomic_write() with temp file + rename
     - Implement file_lock() context manager with fcntl
@@ -125,7 +125,7 @@ This implementation plan creates the vince CLI Python application following the 
     - Implement load_json() with default fallback
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ] 7.2 Implement DefaultsStore
+  - [x] 7.2 Implement DefaultsStore
     - Create vince/persistence/defaults.py
     - Implement load(), save() methods
     - Implement find_by_extension() method
@@ -133,12 +133,12 @@ This implementation plan creates the vince CLI Python application following the 
     - Implement update_state() method
     - _Requirements: 4.5, 4.6_
 
-  - [ ] 7.3 Write property test for DefaultsStore
+  - [x] 7.3 Write property test for DefaultsStore
     - **Property 5: DefaultsStore Add-Find Consistency**
     - Test add then find returns the entry
     - **Validates: Requirements 4.6**
 
-  - [ ] 7.4 Implement OffersStore
+  - [x] 7.4 Implement OffersStore
     - Create vince/persistence/offers.py
     - Implement load(), save() methods
     - Implement find_by_id() method
@@ -146,46 +146,46 @@ This implementation plan creates the vince CLI Python application following the 
     - Implement update_state() method
     - _Requirements: 4.7, 4.8_
 
-  - [ ] 7.5 Write property test for OffersStore
+  - [x] 7.5 Write property test for OffersStore
     - **Property 6: OffersStore Add-Find Consistency**
     - Test add then find returns the entry
     - **Validates: Requirements 4.8**
 
-  - [ ] 7.6 Write property test for persistence round-trip
+  - [x] 7.6 Write property test for persistence round-trip
     - **Property 4: Persistence Round-Trip Consistency**
     - Test save then load returns equivalent data
     - **Validates: Requirements 4.1, 4.5, 4.7**
 
-  - [ ] 7.7 Write property test for backup retention
+  - [x] 7.7 Write property test for backup retention
     - **Property 7: Backup Retention Limit**
     - Test backup count never exceeds max_backups
     - **Validates: Requirements 4.9, 4.10**
 
-- [ ] 8. Checkpoint - Verify persistence layer
+- [x] 8. Checkpoint - Verify persistence layer
   - Ensure stores work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Implement state machines
-  - [ ] 9.1 Implement default state machine
+- [x] 9. Implement state machines
+  - [x] 9.1 Implement default state machine
     - Create vince/state/default_state.py
     - Define DefaultState enum (none, pending, active, removed)
     - Define VALID_TRANSITIONS mapping
     - Implement validate_transition() function
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 9.2 Write property test for default state transitions
+  - [x] 9.2 Write property test for default state transitions
     - **Property 8: Default State Transition Validity**
     - Test valid transitions succeed, invalid raise errors
     - **Validates: Requirements 5.2, 5.3**
 
-  - [ ] 9.3 Implement offer state machine
+  - [x] 9.3 Implement offer state machine
     - Create vince/state/offer_state.py
     - Define OfferState enum (none, created, active, rejected)
     - Define VALID_TRANSITIONS mapping
     - Implement validate_transition() function
     - _Requirements: 5.4, 5.5, 5.6_
 
-  - [ ] 9.4 Write property test for offer state transitions
+  - [x] 9.4 Write property test for offer state transitions
     - **Property 9: Offer State Transition Validity**
     - Test valid transitions succeed, invalid raise errors
     - **Validates: Requirements 5.5, 5.6**

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/state/offer_state.py
+# hypothesis_version: 6.148.7
+
+['active', 'created', 'none', 'rejected']

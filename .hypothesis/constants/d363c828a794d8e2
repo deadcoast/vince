@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/persistence/base.py
+# hypothesis_version: 6.148.7
+
+['%Y-%m-%dT%H-%M-%SZ', '.lock', '.tmp', 'w']

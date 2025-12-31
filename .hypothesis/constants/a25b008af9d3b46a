@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/persistence/offers.py
+# hypothesis_version: 6.148.7
+
+['1.0.0', 'active', 'auto_created', 'backups', 'created', 'created_at', 'default_id', 'description', 'offer_id', 'offers', 'offers.json', 'rejected', 'state', 'used_at', 'version']
