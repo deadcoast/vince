@@ -1,6 +1,16 @@
 # vince - A Rich CLI Application
 
+## Overview
+
 Vince is a simple, sophisticated CLI created with elevated visual ASCII UI delivery to quickly set default applications to file extensions. Its quick, intuitive and visually friendly design sets the new standard for user quality of life and visual CLI UI design.
+
+This document provides comprehensive documentation of the vince CLI including:
+- Framework and technology stack
+- ID system conventions
+- CLI commands, flags, and operators
+- Persistence layer architecture
+- Validation rules and patterns
+- Output formatting with Rich
 
 — *Inspired by Infomercials of the Millennials Age*
 
@@ -522,14 +532,24 @@ Application paths must meet the following criteria:
 | Executable | `os.access(path, os.X_OK)` | VE202 |
 
 ```python
-def validate_path(path: Path) -> None:
-    """Validate application path."""
-    if not path.exists():
-        raise ValidationError(f"VE101: Invalid path: {path} does not exist")
-    if not path.is_file():
-        raise ValidationError(f"VE101: Invalid path: {path} is not a file")
-    if not os.access(path, os.X_OK):
-        raise ValidationError(f"VE202: Permission denied: {path} is not executable")
+from pathlib import Path
+import os
+from vince.errors import InvalidPathError, PermissionDeniedError
+
+def validate_path(path: Path) -> Path:
+    """Validate application path exists and is executable."""
+    resolved_path = path.resolve()
+    
+    if not resolved_path.exists():
+        raise InvalidPathError(str(resolved_path))  # VE101
+    
+    if not resolved_path.is_file():
+        raise InvalidPathError(str(resolved_path))  # VE101
+    
+    if not os.access(resolved_path, os.X_OK):
+        raise PermissionDeniedError(str(resolved_path))  # VE202
+    
+    return resolved_path
 ```
 
 **Path Normalization**:
@@ -544,16 +564,30 @@ File extensions must follow the supported format:
 | Rule | Pattern | Error Code |
 | --- | --- | --- |
 | Format | `^\.[a-z0-9]+$` | VE102 |
-| Supported | In FILE_TYPES table | VE102 |
+| Supported | In SUPPORTED_EXTENSIONS set | VE102 |
 
 ```python
+import re
+from vince.errors import InvalidExtensionError
+
 EXTENSION_PATTERN = re.compile(r'^\.[a-z0-9]+$')
 
-def validate_extension(ext: str) -> None:
-    """Validate file extension format."""
+SUPPORTED_EXTENSIONS = {
+    ".md", ".py", ".txt", ".js", ".html", ".css",
+    ".json", ".yml", ".yaml", ".xml", ".csv", ".sql"
+}
+
+def validate_extension(ext: str) -> str:
+    """Validate file extension format and support."""
     ext = ext.lower()  # Auto-convert to lowercase
+    
     if not EXTENSION_PATTERN.match(ext):
-        raise ValidationError(f"VE102: Invalid extension: {ext} is not supported")
+        raise InvalidExtensionError(ext)  # VE102
+    
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise InvalidExtensionError(ext)  # VE102
+    
+    return ext
 ```
 
 **Supported Extensions**:
@@ -564,8 +598,14 @@ def validate_extension(ext: str) -> None:
 | `.py` | `.python` | Python files |
 | `.txt` | `.text` | Text files |
 | `.js` | `.javascript` | JavaScript files |
+| `.html` | - | HTML files |
+| `.css` | - | CSS files |
 | `.json` | - | JSON files |
 | `.yml` | `.yaml` | YAML files |
+| `.yaml` | - | YAML files |
+| `.xml` | - | XML files |
+| `.csv` | - | CSV files |
+| `.sql` | - | SQL files |
 
 > [!NOTE]
 > For complete extension list, see the FILE_TYPES table in [tables.md](tables.md).
@@ -578,18 +618,24 @@ Offer IDs must follow strict naming rules:
 | --- | --- | --- |
 | Format | `^[a-z][a-z0-9_-]{0,31}$` | VE103 |
 | Unique | Not in existing offers | VE303 |
-| Reserved | Not in reserved names | VE103 |
+| Reserved | Not in RESERVED_NAMES set | VE103 |
 
 ```python
+import re
+from vince.errors import InvalidOfferIdError
+
 OFFER_ID_PATTERN = re.compile(r'^[a-z][a-z0-9_-]{0,31}$')
 RESERVED_NAMES = {'help', 'version', 'list', 'all', 'none', 'default'}
 
-def validate_offer_id(offer_id: str) -> None:
+def validate_offer_id(offer_id: str) -> str:
     """Validate offer ID format and availability."""
     if not OFFER_ID_PATTERN.match(offer_id):
-        raise ValidationError(f"VE103: Invalid offer_id: {offer_id} does not match pattern")
+        raise InvalidOfferIdError(offer_id)  # VE103
+    
     if offer_id in RESERVED_NAMES:
-        raise ValidationError(f"VE103: Invalid offer_id: {offer_id} is a reserved name")
+        raise InvalidOfferIdError(offer_id)  # VE103
+    
+    return offer_id
 ```
 
 **Reserved Offer Names**: `help`, `version`, `list`, `all`, `none`, `default`
@@ -1144,3 +1190,19 @@ console.print("[info]ℹ[/] Use [command]vince list -def[/] to see all defaults"
 
 > [!NOTE]
 > For error code details and recovery actions, see [errors.md](errors.md).
+
+## Cross-References
+
+This document is part of the vince CLI documentation system. For related information, see:
+
+| Document | Description |
+| --- | --- |
+| [tables.md](tables.md) | Single Source of Truth for all definitions (commands, errors, states, extensions) |
+| [api.md](api.md) | Python function signatures and command interfaces |
+| [schemas.md](schemas.md) | JSON schema definitions for data persistence |
+| [errors.md](errors.md) | Complete error catalog with codes, messages, and recovery actions |
+| [states.md](states.md) | State machine documentation for defaults and offers |
+| [config.md](config.md) | Configuration options and hierarchy |
+| [examples.md](examples.md) | Usage examples for all commands |
+| [testing.md](testing.md) | Testing patterns and fixtures |
+| [README.md](README.md) | Documentation entry point and navigation |
