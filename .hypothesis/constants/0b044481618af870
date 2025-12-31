@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/errors.py
+# hypothesis_version: 6.148.8
+
+['VE101', 'VE102', 'VE103', 'VE104', 'VE105', 'VE201', 'VE202', 'VE203', 'VE301', 'VE302', 'VE303', 'VE304', 'VE401', 'VE402', 'VE501']

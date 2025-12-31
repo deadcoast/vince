@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/validation/__init__.py
+# hypothesis_version: 6.148.8
+
+['EXTENSION_PATTERN', 'OFFER_ID_PATTERN', 'RESERVED_NAMES', 'SUPPORTED_EXTENSIONS', 'flag_to_extension', 'validate_extension', 'validate_offer_id', 'validate_path']

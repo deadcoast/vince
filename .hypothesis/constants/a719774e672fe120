@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/state/default_state.py
+# hypothesis_version: 6.148.8
+
+['active', 'none', 'pending', 'removed']

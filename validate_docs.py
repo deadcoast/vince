@@ -37,12 +37,22 @@ class ValidationResult:
 
     errors: list[ValidationError] = field(default_factory=list)
     warnings: list[ValidationError] = field(default_factory=list)
+    files_validated: set[str] = field(default_factory=set)
+    properties_checked: set[str] = field(default_factory=set)
 
     def add_error(self, file: str, line: Optional[int], rule: str, message: str):
         self.errors.append(ValidationError(file, line, rule, message, "error"))
 
     def add_warning(self, file: str, line: Optional[int], rule: str, message: str):
         self.warnings.append(ValidationError(file, line, rule, message, "warning"))
+
+    def mark_file_validated(self, filepath: str):
+        """Mark a file as having been validated."""
+        self.files_validated.add(filepath)
+
+    def mark_property_checked(self, property_name: str):
+        """Mark a property validator as having been run."""
+        self.properties_checked.add(property_name)
 
     @property
     def is_valid(self) -> bool:
@@ -51,6 +61,8 @@ class ValidationResult:
     def merge(self, other: "ValidationResult"):
         self.errors.extend(other.errors)
         self.warnings.extend(other.warnings)
+        self.files_validated.update(other.files_validated)
+        self.properties_checked.update(other.properties_checked)
 
 
 # =============================================================================
@@ -1032,7 +1044,6 @@ def validate_api_completeness(content: str, filename: str) -> ValidationResult:
     # Track documented commands and their completeness
     documented_commands: dict[str, dict[str, bool]] = {}
     current_command = None
-    current_section = None
 
     # Patterns for detecting command sections and documentation elements
     command_section_pattern = re.compile(r"^###\s+(\w+)\s*$")
@@ -1071,15 +1082,23 @@ def validate_api_completeness(content: str, filename: str) -> ValidationResult:
                     }
             continue
 
-        # Check for subsections within a command
+        # Check for subsections within a command using precise pattern matching
+        # Use return_type_pattern for more precise detection of return type sections
+        if return_type_pattern.match(stripped):
+            if current_command:
+                documented_commands[current_command]["has_return_type"] = True
+            continue
+
+        # Use exceptions_pattern for more precise detection of raised exceptions sections
+        if exceptions_pattern.match(stripped):
+            if current_command:
+                documented_commands[current_command]["has_exceptions"] = True
+            continue
+
+        # Check for other subsections within a command (for future extensibility)
         subsection_match = subsection_pattern.match(stripped)
         if subsection_match:
-            current_section = subsection_match.group(1).lower()
-            if current_command:
-                if "return" in current_section:
-                    documented_commands[current_command]["has_return_type"] = True
-                elif "exception" in current_section or "raised" in current_section:
-                    documented_commands[current_command]["has_exceptions"] = True
+            # Subsection detected but not currently used for additional tracking
             continue
 
         # Check for function signature in code blocks
@@ -1168,6 +1187,7 @@ def validate_schema_completeness(content: str, filename: str) -> ValidationResul
     # Track documented schemas
     documented_schemas: dict[str, dict[str, bool]] = {}
     current_schema = None
+    in_example_section = False  # Track when parser enters example section
 
     # Patterns
     schema_section_pattern = re.compile(r"^##\s+(\w+)\s+Schema", re.IGNORECASE)
@@ -1213,8 +1233,11 @@ def validate_schema_completeness(content: str, filename: str) -> ValidationResul
                         if '"required"' in block_text:
                             documented_schemas[current_schema]["has_required"] = True
 
-                    # Check if it's an example (no $schema, has actual data)
-                    elif '"version"' in block_text and '"$schema"' not in block_text:
+                    # Check if it's an example - use example_section_pattern context
+                    # or fallback to content-based detection
+                    elif in_example_section or (
+                        '"version"' in block_text and '"$schema"' not in block_text
+                    ):
                         documented_schemas[current_schema]["has_example"] = True
 
                 in_code_block = False
@@ -1225,12 +1248,19 @@ def validate_schema_completeness(content: str, filename: str) -> ValidationResul
             code_block_content.append(line)
             continue
 
+        # Use example_section_pattern to detect example sections
+        if example_section_pattern.match(stripped):
+            if current_schema:
+                in_example_section = True
+            continue
+
         # Check for schema section headers
         match = schema_section_pattern.match(stripped)
         if match:
             schema_name = match.group(1).lower()
             if schema_name in expected_schemas:
                 current_schema = schema_name
+                in_example_section = False  # Reset example section flag for new schema
                 if current_schema not in documented_schemas:
                     documented_schemas[current_schema] = {
                         "has_schema_def": False,
@@ -1468,6 +1498,7 @@ def validate_state_transitions(content: str, filename: str) -> ValidationResult:
     # Track documented transitions
     documented_transitions: list[dict] = []
     current_entity = None
+    current_transition_section = None  # Track current transition section for context
 
     # Patterns
     transition_section_pattern = re.compile(
@@ -1489,6 +1520,14 @@ def validate_state_transitions(content: str, filename: str) -> ValidationResult:
         entity_match = entity_section_pattern.match(stripped)
         if entity_match:
             current_entity = entity_match.group(1).lower()
+            current_transition_section = None  # Reset transition section
+            continue
+
+        # Use transition_section_pattern to detect transition sections
+        trans_match = transition_section_pattern.match(stripped)
+        if trans_match:
+            current_transition_section = trans_match.group(1).lower()
+            in_table = False  # Reset table state for new section
             continue
 
         # Parse transition tables
@@ -1519,6 +1558,7 @@ def validate_state_transitions(content: str, filename: str) -> ValidationResult:
                                 "side effects", row_data.get("side_effects", "")
                             ),
                             "entity": current_entity,
+                            "transition_section": current_transition_section,
                             "line": line_num,
                         }
                     )
@@ -1528,34 +1568,47 @@ def validate_state_transitions(content: str, filename: str) -> ValidationResult:
 
     # Validate each documented transition
     for trans in documented_transitions:
+        # Build context string for error messages
+        section_context = (
+            f" in '{trans['transition_section']}' section"
+            if trans.get("transition_section")
+            else ""
+        )
+
         if not trans["from"]:
             result.add_error(
-                filename, trans["line"], "5.3", "State transition missing 'from' state"
+                filename,
+                trans["line"],
+                "5.3",
+                f"State transition missing 'from' state{section_context}",
             )
         if not trans["to"]:
             result.add_error(
-                filename, trans["line"], "5.3", "State transition missing 'to' state"
+                filename,
+                trans["line"],
+                "5.3",
+                f"State transition missing 'to' state{section_context}",
             )
         if not trans["trigger"]:
             result.add_error(
                 filename,
                 trans["line"],
                 "5.3",
-                f"State transition from '{trans['from']}' to '{trans['to']}' missing trigger command",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing trigger command{section_context}",
             )
         if not trans["conditions"]:
             result.add_error(
                 filename,
                 trans["line"],
                 "5.3",
-                f"State transition from '{trans['from']}' to '{trans['to']}' missing conditions",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing conditions{section_context}",
             )
         if not trans["side_effects"]:
             result.add_error(
                 filename,
                 trans["line"],
                 "5.4",
-                f"State transition from '{trans['from']}' to '{trans['to']}' missing side effects",
+                f"State transition from '{trans['from']}' to '{trans['to']}' missing side effects{section_context}",
             )
 
     return result
@@ -1654,6 +1707,161 @@ def extract_config_options_from_tables(tables_content: str) -> set[str]:
                     options.add(cells[0])
 
     return options
+
+
+# =============================================================================
+# Cross-Reference Validation: Documentation-Code Sync
+# Validates: Requirements 3.1, 6.3
+# Feature: integration-validation
+# =============================================================================
+
+
+def extract_commands_from_api(api_path: Path) -> set[str]:
+    """
+    Extract all documented command names from api.md.
+
+    Parses the api.md file to find command sections (### command_name)
+    and returns a set of command identifiers.
+
+    Args:
+        api_path: Path to the api.md file
+
+    Returns:
+        Set of command names documented in api.md
+    """
+    commands = set()
+
+    if not api_path.exists():
+        return commands
+
+    content = api_path.read_text()
+    lines = content.split("\n")
+
+    # Pattern to match command section headers like ### slap, ### chop, etc.
+    # These are the main command documentation sections
+    command_section_pattern = re.compile(r"^###\s+(\w+)\s*$")
+
+    # Known vince commands to filter out non-command sections
+    known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list"}
+
+    in_code_block = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Track code blocks to avoid matching headers inside them
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+            continue
+
+        if in_code_block:
+            continue
+
+        match = command_section_pattern.match(stripped)
+        if match:
+            cmd_name = match.group(1).lower()
+            # Only include if it's a known command (to filter out other H3 sections)
+            if cmd_name in known_commands:
+                commands.add(cmd_name)
+
+    return commands
+
+
+def extract_commands_from_source(commands_dir: Path) -> set[str]:
+    """
+    Extract all implemented command names from vince/commands/ directory.
+
+    Scans the commands directory for Python files and extracts command
+    identifiers based on file names and function definitions.
+
+    Args:
+        commands_dir: Path to the vince/commands/ directory
+
+    Returns:
+        Set of command names implemented in source code
+    """
+    commands = set()
+
+    if not commands_dir.exists() or not commands_dir.is_dir():
+        return commands
+
+    # Map file names to command names
+    # Some files have _cmd suffix to avoid Python keyword conflicts
+    file_to_command = {
+        "slap.py": "slap",
+        "chop.py": "chop",
+        "set_cmd.py": "set",
+        "forget.py": "forget",
+        "offer.py": "offer",
+        "reject.py": "reject",
+        "list_cmd.py": "list",
+    }
+
+    for py_file in commands_dir.glob("*.py"):
+        if py_file.name == "__init__.py":
+            continue
+
+        # Check if file maps to a known command
+        if py_file.name in file_to_command:
+            commands.add(file_to_command[py_file.name])
+        else:
+            # For unknown files, try to extract command from function definition
+            content = py_file.read_text()
+            # Look for cmd_* function definitions
+            cmd_pattern = re.compile(r"def\s+cmd_(\w+)\s*\(")
+            for match in cmd_pattern.finditer(content):
+                commands.add(match.group(1).lower())
+
+    return commands
+
+
+def validate_code_documentation_sync(
+    docs_dir: Path,
+    src_dir: Path,
+) -> ValidationResult:
+    """
+    Validate bidirectional consistency between docs and source code.
+
+    Checks:
+    1. All documented commands have implementations
+    2. All implemented commands are documented
+
+    Args:
+        docs_dir: Path to the docs/ directory
+        src_dir: Path to the vince/ source directory
+
+    Returns:
+        ValidationResult with any sync errors found
+    """
+    result = ValidationResult()
+
+    # Extract commands from documentation
+    api_path = docs_dir / "api.md"
+    doc_commands = extract_commands_from_api(api_path)
+
+    # Extract commands from source code
+    commands_dir = src_dir / "commands"
+    src_commands = extract_commands_from_source(commands_dir)
+
+    # Check for documented but not implemented commands
+    for cmd in doc_commands - src_commands:
+        result.add_error(
+            "sync",
+            None,
+            "DOC-CODE",
+            f"Command '{cmd}' documented in api.md but not implemented in vince/commands/",
+        )
+
+    # Check for implemented but not documented commands
+    for cmd in src_commands - doc_commands:
+        result.add_error(
+            "sync",
+            None,
+            "CODE-DOC",
+            f"Command '{cmd}' implemented in vince/commands/ but not documented in api.md",
+        )
+
+    return result
 
 
 def validate_new_table_cross_references(
@@ -1782,6 +1990,9 @@ def validate_file(
                 validate_example_coverage(content, filename, tables_definitions)
             )
 
+    # Mark file as validated after processing
+    result.mark_file_validated(filename)
+
     return result
 
 
@@ -1849,6 +2060,12 @@ def validate_all_docs(docs_dir: Path) -> ValidationResult:
                     "cross-refs",
                 )
             )
+
+    # Validate documentation-to-code sync
+    # Assumes source is in vince/ relative to docs parent directory
+    src_dir = docs_dir.parent / "vince"
+    if src_dir.exists():
+        result.merge(validate_code_documentation_sync(docs_dir, src_dir))
 
     return result
 

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/commands/chop.py
+# hypothesis_version: 6.148.8
+
+['--css', '--csv', '--html', '--js', '--json', '--md', '--py', '--sql', '--txt', '--verbose', '--xml', '--yaml', '--yml', '-forget', '-vb', '.css', '.csv', '.html', '.js', '.json', '.md', '.py', '.sql', '.txt', '.xml', '.yaml', '.yml', 'Target .css files', 'Target .csv files', 'Target .html files', 'Target .js files', 'Target .json files', 'Target .md files', 'Target .py files', 'Target .sql files', 'Target .txt files', 'Target .xml files', 'Target .yaml files', 'Target .yml files', 'backup_enabled', 'id', 'max_backups', 'removed', 'state', 'verbose']

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/output/theme.py
+# hypothesis_version: 6.148.8
+
+['blue underline', 'command', 'cyan', 'cyan bold', 'error', 'extension', 'green', 'green italic', 'header', 'info', 'magenta', 'offer', 'path', 'red bold', 'state', 'success', 'warning', 'white bold', 'yellow']

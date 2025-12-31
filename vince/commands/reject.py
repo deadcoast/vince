@@ -65,7 +65,19 @@ def cmd_reject(
         # Validate the transition
         validate_transition(current_state, target_state, offer_id)
 
+        # Warn when rejecting an active offer
+        if current_state == OfferState.ACTIVE:
+            print_warning(
+                f"Offer [offer]{offer_id}[/] has been used. "
+                "Consider if dependent workflows need updating."
+            )
+
         if complete_delete:
+            # Warn about permanent removal
+            print_warning(
+                f"Complete delete will permanently remove [offer]{offer_id}[/] "
+                "from the data file."
+            )
             # Complete delete - remove from data file entirely
             _delete_offer(offers_store, offer_id, backup_enabled, max_backups)
             print_success(f"Offer deleted: [offer]{offer_id}[/]")

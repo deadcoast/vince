@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/persistence/__init__.py
+# hypothesis_version: 6.148.8
+
+['DefaultsStore', 'OffersStore', 'atomic_write', 'create_backup', 'file_lock', 'load_json']
