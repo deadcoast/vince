@@ -10,44 +10,44 @@ This implementation plan populates and standardizes all `vince` CLI documentatio
   - [x] 1.1 Fix heading hierarchy (H1 → H2 → H3)
     - Change `### DEFINITIONS` to `## DEFINITIONS`
     - Ensure proper markdown structure
-    - _Requirements: 1.1, 1.2_
+    - *Requirements: 1.1, 1.2*
 
   - [x] 1.2 Complete DEFINITIONS table with all id/sid pairs
     - Add missing definitions from overview.md
     - Add `rid` column to definitions
     - Ensure all system terms are defined
-    - _Requirements: 2.1, 6.1_
+    - *Requirements: 2.1, 6.1*
 
   - [x] 1.3 Complete COMMANDS table with id, sid, rid, and description
     - Add `rid` and `description` columns
     - Include all 7 commands: slap, chop, set, forget, offer, reject, list
-    - _Requirements: 2.1, 6.2_
+    - *Requirements: 2.1, 6.2*
 
   - [x] 1.4 Complete FILE_TYPES table with id, full_id, ext, sid, and flags
     - Add `sid` and flag columns
     - Ensure all 12 file types are documented
-    - _Requirements: 2.2, 6.3_
+    - *Requirements: 2.2, 6.3*
 
   - [x] 1.5 Create FLAGS tables by category
     - Create UTILITY_FLAGS table (help, version, verbose, debug, trace)
     - Create QOL_FLAGS table (set, forget, slap, chop, offer, reject)
     - Create LIST_FLAGS table (app, cmd, ext, def, off, all)
-    - _Requirements: 2.3, 4.1, 4.2, 4.4, 6.4_
+    - *Requirements: 2.3, 4.1, 4.2, 4.4, 6.4*
 
   - [x] 1.6 Create OPERATORS table
     - Document `--`, `-`, `.` operators
     - Include symbol, name, and usage columns
-    - _Requirements: 6.5_
+    - *Requirements: 6.5*
 
   - [x] 1.7 Create ARGUMENTS table
     - Document path, file_extension, offer arguments
     - Include pattern and description columns
-    - _Requirements: 6.6_
+    - *Requirements: 6.6*
 
   - [x] 1.8 Create RULES table
     - Document PD01, UID01, TB01, TB02, TB03
     - Include rid, category, and description columns
-    - _Requirements: 9.1, 9.3_
+    - *Requirements: 9.1, 9.3*
 
 - [x] 2. Checkpoint - Verify tables.md completeness
   - Ensure all tables have proper headers and separators
@@ -58,45 +58,45 @@ This implementation plan populates and standardizes all `vince` CLI documentatio
   - [x] 3.1 Align heading hierarchy
     - Ensure H1 → H2 → H3 structure
     - Fix any heading level jumps
-    - _Requirements: 1.1, 1.2_
+    - *Requirements: 1.1, 1.2*
 
   - [x] 3.2 Update ID System documentation
     - Ensure id/sid/rid/num definitions match tables.md
     - Add cross-reference to tables.md for complete listings
-    - _Requirements: 5.3, 5.5_
+    - *Requirements: 5.3, 5.5*
 
   - [x] 3.3 Update Commands section
     - Ensure all 7 commands are documented
     - Add `list` command documentation
     - Ensure descriptions match tables.md
-    - _Requirements: 3.1, 5.1_
+    - *Requirements: 3.1, 5.1*
 
   - [x] 3.4 Update FLAGS sections
     - Organize into Utility, QOL, Extension, List categories
     - Ensure all flags have consistent `-` and `--` prefixes
     - Add missing list subsection flags documentation
-    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+    - *Requirements: 4.1, 4.2, 4.3, 4.4, 4.5*
 
   - [x] 3.5 Document command-QOL flag relationships
     - Explicitly state that QOL flags mirror commands
     - Document slap auto-creates offer behavior
-    - _Requirements: 3.3, 3.4_
+    - *Requirements: 3.3, 3.4*
 
   - [x] 3.6 Document `.` operator usage per command
     - Add operator usage examples for each applicable command
-    - _Requirements: 3.5_
+    - *Requirements: 3.5*
 
   - [x] 3.7 Ensure [PD01] modular design principle is prominent
     - Move to top of document or highlight in introduction
-    - _Requirements: 10.1, 10.4_
+    - *Requirements: 10.1, 10.4*
 
   - [x] 3.8 Add code block language identifiers
     - Ensure all code blocks have `sh` or appropriate language tag
-    - _Requirements: 1.4_
+    - *Requirements: 1.4*
 
   - [x] 3.9 Standardize note/callout syntax
     - Use `> [!NOTE]` format consistently
-    - _Requirements: 1.5_
+    - *Requirements: 1.5*
 
 - [x] 4. Checkpoint - Verify overview.md consistency
   - Cross-reference all definitions with tables.md
@@ -108,44 +108,44 @@ This implementation plan populates and standardizes all `vince` CLI documentatio
     - Ensure multi-step example is complete
     - Add flag combination examples
     - Document auto-offer creation behavior
-    - _Requirements: 7.1, 7.2_
+    - *Requirements: 7.1, 7.2*
 
   - [x] 5.2 Complete `chop` examples
     - Add complete syntax examples
     - Add `.` operator usage example
-    - _Requirements: 7.1, 7.3_
+    - *Requirements: 7.1, 7.3*
 
   - [x] 5.3 Complete `set` examples
     - Ensure examples are distinct from slap
     - Add flag combinations
-    - _Requirements: 7.1, 7.2_
+    - *Requirements: 7.1, 7.2*
 
   - [x] 5.4 Complete `forget` examples
     - Add complete syntax examples
     - Add `.` operator usage example
-    - _Requirements: 7.1, 7.3_
+    - *Requirements: 7.1, 7.3*
 
   - [x] 5.5 Add `offer` examples section
     - Create new section for offer command
     - Show offer creation syntax
-    - _Requirements: 7.1_
+    - *Requirements: 7.1*
 
   - [x] 5.6 Add `reject` examples section
     - Create new section for reject command
     - Show reject and complete-delete syntax
-    - _Requirements: 7.1_
+    - *Requirements: 7.1*
 
   - [x] 5.7 Complete `list` examples
     - Add examples for all subsection flags (-app, -cmd, -ext, -def, -off, -all)
-    - _Requirements: 7.4_
+    - *Requirements: 7.4*
 
   - [x] 5.8 Standardize step notation
     - Use consistent sid notation (S1, S2) for step references
-    - _Requirements: 7.5_
+    - *Requirements: 7.5*
 
   - [x] 5.9 Add code block language identifiers
     - Ensure all code blocks have `sh` language tag
-    - _Requirements: 1.4_
+    - *Requirements: 1.4*
 
 - [x] 6. Checkpoint - Verify examples.md completeness
   - Verify all 7 commands have examples
@@ -155,24 +155,24 @@ This implementation plan populates and standardizes all `vince` CLI documentatio
 - [x] 7. Update README.md for professional presentation
   - [x] 7.1 Populate framework links
     - Replace XXXXXXX placeholders with actual URLs
-    - _Requirements: 5.4, 8.1_
+    - *Requirements: 5.4, 8.1*
 
   - [x] 7.2 Verify installation structure
     - Ensure Quick Install, Step One, Step Two, Step Three sections exist
-    - _Requirements: 8.2_
+    - *Requirements: 8.2*
 
   - [x] 7.3 Verify troubleshooting section
     - Ensure troubleshooting section is complete
-    - _Requirements: 8.3_
+    - *Requirements: 8.3*
 
   - [x] 7.4 Add documentation references
     - Add links to overview.md, examples.md, tables.md
     - Create "Documentation" section
-    - _Requirements: 8.4_
+    - *Requirements: 8.4*
 
   - [x] 7.5 Add code block language identifiers
     - Ensure all code blocks have `sh` language tag
-    - _Requirements: 1.4_
+    - *Requirements: 1.4*
 
 - [x] 8. Final Checkpoint - Cross-reference validation
   - Verify all commands in examples.md exist in overview.md
@@ -240,24 +240,24 @@ This implementation plan populates and standardizes all `vince` CLI documentatio
     - Change `command` sid from `cmd` to unique value (e.g., `cm`)
     - Change `offer` sid from `off` to unique value (e.g., `of`)
     - Ensure DEFINITIONS table sids don't conflict with LIST_FLAGS sids
-    - _Requirements: 2.5, 6.1_
+    - *Requirements: 2.5, 6.1*
 
   - [x] 10.2 Fix overview.md table schemas
     - Update Commands table to not trigger COMMANDS schema validation (rename section or adjust validator)
     - Update Operators table to not trigger OPERATORS schema validation
     - Update Arguments table to not trigger ARGUMENTS schema validation
-    - _Requirements: 2.1_
+    - *Requirements: 2.1*
 
   - [x] 10.3 Fix Extension Flags table structure in overview.md
     - Change column headers from `Short | Long | Sets Default For` to proper flag format
     - Extension flags use `--` prefix for both short and long forms (they are long flags)
     - Update table to reflect that extension flags don't have single-dash short forms
-    - _Requirements: 4.5_
+    - *Requirements: 4.5*
 
 - [x] 11. Final validation checkpoint
   - Run `python validate_docs.py --all` and verify 0 errors
   - Ensure all property-based tests pass
-  - _Requirements: All_
+  - *Requirements: All*
 
 ## Notes
 
