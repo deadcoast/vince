@@ -9,8 +9,8 @@ from typing import Optional
 from typer import Option
 
 from vince.config import get_config, get_data_dir
-from vince.errors import VinceError, handle_error, NoDefaultError
-from vince.output.messages import print_success, print_info
+from vince.errors import NoDefaultError, VinceError, handle_error
+from vince.output.messages import print_info, print_success
 from vince.persistence.defaults import DefaultsStore
 from vince.state.default_state import DefaultState, validate_transition
 from vince.validation.extension import validate_extension
@@ -37,7 +37,7 @@ def cmd_forget(
     ),
 ) -> None:
     """Forget a default for a file extension.
-    
+
     Transitions the default state to removed.
     Raises error if no default exists for the extension.
     """
@@ -47,39 +47,50 @@ def cmd_forget(
         verbose = verbose or config.get("verbose", False)
         backup_enabled = config.get("backup_enabled", True)
         max_backups = config.get("max_backups", 5)
-        
+
         # Determine extension from flags
         ext = _get_extension_from_flags(
-            md=md, py=py, txt=txt, js=js, html=html, css=css,
-            json_ext=json_ext, yml=yml, yaml=yaml, xml=xml, csv=csv, sql=sql
+            md=md,
+            py=py,
+            txt=txt,
+            js=js,
+            html=html,
+            css=css,
+            json_ext=json_ext,
+            yml=yml,
+            yaml=yaml,
+            xml=xml,
+            csv=csv,
+            sql=sql,
         )
-        
+
         if ext is None:
             from vince.errors import InvalidExtensionError
+
             raise InvalidExtensionError("No extension specified. Use --md, --py, etc.")
-        
+
         # Validate extension
         ext = validate_extension(ext)
-        
+
         if verbose:
             print_info(f"Target extension: [extension]{ext}[/]")
-        
+
         # Get data directory and store
         data_dir = get_data_dir(config)
         defaults_store = DefaultsStore(data_dir)
-        
+
         # Find existing default
         existing = defaults_store.find_by_extension(ext)
-        
+
         if existing is None:
             raise NoDefaultError(ext)
-        
+
         current_state = DefaultState(existing["state"])
-        
+
         if verbose:
             print_info(f"Current state: [state]{current_state.value}[/]")
             print_info(f"Application: [path]{existing['application_path']}[/]")
-        
+
         # Determine target state based on current state
         if current_state == DefaultState.PENDING:
             # Pending defaults go back to NONE (conceptually)
@@ -87,30 +98,31 @@ def cmd_forget(
         else:
             # Active defaults go to REMOVED
             target_state = DefaultState.REMOVED
-        
+
         if verbose:
             print_info(f"Target state: [state]{target_state.value}[/]")
-        
+
         # Validate state transition
         validate_transition(current_state, target_state, ext)
-        
+
         # Update state - always mark as "removed" in storage
         defaults_store.update_state(
             existing["id"],
             "removed",
             backup_enabled=backup_enabled,
-            max_backups=max_backups
+            max_backups=max_backups,
         )
-        
+
         print_success(f"Default forgotten for [extension]{ext}[/]")
-        
+
         if verbose:
             print_info(f"Entry ID: {existing['id']}")
-    
+
     except VinceError as e:
         handle_error(e)
     except Exception as e:
         from vince.errors import UnexpectedError
+
         handle_error(UnexpectedError(str(e)))
 
 
@@ -129,7 +141,7 @@ def _get_extension_from_flags(
     sql: bool,
 ) -> Optional[str]:
     """Get extension string from boolean flags.
-    
+
     Returns the first True flag's extension, or None if no flags are set.
     """
     flag_map = {
@@ -146,9 +158,9 @@ def _get_extension_from_flags(
         ".csv": csv,
         ".sql": sql,
     }
-    
+
     for ext, is_set in flag_map.items():
         if is_set:
             return ext
-    
+
     return None

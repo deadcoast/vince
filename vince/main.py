@@ -1,8 +1,19 @@
 """Vince CLI entry point."""
 
-from typer import Typer, Option
 from typing import Optional
+
+from typer import Option, Typer
+
 import vince
+
+from vince.commands.chop import cmd_chop
+from vince.commands.forget import cmd_forget
+from vince.commands.list_cmd import cmd_list
+from vince.commands.offer import cmd_offer
+from vince.commands.reject import cmd_reject
+from vince.commands.set_cmd import cmd_set
+# Import and register commands
+from vince.commands.slap import cmd_slap
 
 app = Typer(
     name="vince",
@@ -16,6 +27,7 @@ def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
         from rich.console import Console
+
         console = Console()
         console.print(f"vince version {vince.__version__}")
         raise SystemExit(0)
@@ -34,16 +46,6 @@ def main(
 ) -> None:
     """Vince CLI - A Rich CLI for setting default applications to file extensions."""
     pass
-
-
-# Import and register commands
-from vince.commands.slap import cmd_slap
-from vince.commands.chop import cmd_chop
-from vince.commands.set_cmd import cmd_set
-from vince.commands.forget import cmd_forget
-from vince.commands.offer import cmd_offer
-from vince.commands.reject import cmd_reject
-from vince.commands.list_cmd import cmd_list
 
 app.command(name="slap")(cmd_slap)
 app.command(name="chop")(cmd_chop)
