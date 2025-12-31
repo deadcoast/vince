@@ -1,5 +1,7 @@
 # Configuration
 
+## Overview
+
 This document provides comprehensive documentation for the vince CLI configuration system, including file hierarchy, configuration options, validation rules, precedence behavior, and example configurations.
 
 > [!NOTE]

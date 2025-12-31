@@ -1,5 +1,9 @@
 # TABLES
 
+## Overview
+
+This document serves as the Single Source of Truth (SSOT) for all definitions, identifiers, and reference tables in the vince CLI documentation system. All other documentation files reference this document for canonical definitions of commands, errors, states, extensions, and configuration options.
+
 ## ID SYSTEM OVERVIEW
 
 The `id`/`sid` relationship mirrors the familiar CLI flag pattern of `-h`/`--help`:
@@ -179,3 +183,19 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | TB01 | Table | Tables must have proper headers and separators |
 | TB02 | Table | Use template [1] for variable definitions |
 | TB03 | Table | Use template [2] for standard tables |
+
+## Cross-References
+
+This document is the Single Source of Truth for the vince CLI documentation system. For related information, see:
+
+| Document | Description |
+| --- | --- |
+| [README.md](README.md) | Documentation entry point and navigation |
+| [overview.md](overview.md) | System design, commands, flags, and validation rules |
+| [api.md](api.md) | Python function signatures and command interfaces |
+| [schemas.md](schemas.md) | JSON schema definitions for data persistence |
+| [errors.md](errors.md) | Complete error catalog with codes, messages, and recovery actions |
+| [states.md](states.md) | State machine documentation for defaults and offers |
+| [config.md](config.md) | Configuration options and hierarchy |
+| [examples.md](examples.md) | Usage examples for all commands |
+| [testing.md](testing.md) | Testing patterns and fixtures |
