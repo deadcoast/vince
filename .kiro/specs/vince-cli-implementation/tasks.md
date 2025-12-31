@@ -365,23 +365,23 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error case (invalid subsection)
     - _Requirements: 14.4, 14.5, 14.6, 14.7_
 
-- [ ] 22. Checkpoint - Verify all commands
+- [x] 22. Checkpoint - Verify all commands
   - Run all commands manually to verify behavior
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 23. Integration tests and coverage
-  - [ ] 23.1 Write integration tests for command flows
+- [x] 23. Integration tests and coverage
+  - [x] 23.1 Write integration tests for command flows
     - Test slap → list → chop flow
     - Test slap -set → offer auto-creation
     - Test offer → reject flow
     - _Requirements: 15.4_
 
-  - [ ] 23.2 Verify coverage targets
+  - [x] 23.2 Verify coverage targets
     - Run pytest with coverage
     - Ensure minimum 85% overall coverage
     - _Requirements: 15.4_
 
-- [ ] 24. Final validation checkpoint
+- [x] 24. Final validation checkpoint
   - Run full test suite with `pytest --cov=vince`
   - Verify all property-based tests pass
   - Verify all commands work end-to-end
