@@ -218,34 +218,34 @@ This implementation plan creates the vince CLI Python application following the 
     - Test malformed JSON raises VE402, invalid options raise VE401
     - **Validates: Requirements 6.5, 6.6**
 
-- [ ] 12. Checkpoint - Verify configuration system
+- [x] 12. Checkpoint - Verify configuration system
   - Ensure config loading works correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Implement output system
-  - [ ] 13.1 Implement Rich theme
+- [x] 13. Implement output system
+  - [x] 13.1 Implement Rich theme
     - Create vince/output/theme.py
     - Define VINCE_THEME with all styles
     - Create themed console instance
     - _Requirements: 7.1_
 
-  - [ ] 13.2 Implement message functions
+  - [x] 13.2 Implement message functions
     - Create vince/output/messages.py
     - Implement print_success(), print_warning(), print_error(), print_info()
     - Use correct Rich markup formats
     - _Requirements: 7.2, 7.3, 7.4, 7.5_
 
-  - [ ] 13.3 Implement table functions
+  - [x] 13.3 Implement table functions
     - Create vince/output/tables.py
     - Implement create_defaults_table()
     - Implement create_offers_table()
     - _Requirements: 7.6, 7.7_
 
-- [ ] 14. Checkpoint - Verify output system
+- [x] 14. Checkpoint - Verify output system
   - Ensure output formatting works correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Implement slap command
+- [-] 15. Implement slap command
   - [ ] 15.1 Implement cmd_slap function
     - Create vince/commands/slap.py
     - Add path argument with Typer validation
