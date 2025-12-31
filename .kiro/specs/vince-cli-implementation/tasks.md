@@ -190,30 +190,30 @@ This implementation plan creates the vince CLI Python application following the 
     - Test valid transitions succeed, invalid raise errors
     - **Validates: Requirements 5.5, 5.6**
 
-- [ ] 10. Checkpoint - Verify state machines
+- [x] 10. Checkpoint - Verify state machines
   - Ensure state transitions work correctly
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement configuration system
-  - [ ] 11.1 Implement config loader
+- [x] 11. Implement configuration system
+  - [x] 11.1 Implement config loader
     - Create vince/config.py
     - Define DEFAULT_CONFIG with all options
     - Implement get_config() with hierarchy loading
     - Implement config merging with precedence
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ] 11.2 Write property test for config precedence
+  - [x] 11.2 Write property test for config precedence
     - **Property 10: Config Precedence Correctness**
     - Test project > user > default precedence
     - **Validates: Requirements 6.2, 6.3, 6.4**
 
-  - [ ] 11.3 Implement config validation
+  - [x] 11.3 Implement config validation
     - Add JSON parsing error handling
     - Add config option validation
     - Raise appropriate errors (VE401, VE402)
     - _Requirements: 6.5, 6.6_
 
-  - [ ] 11.4 Write property test for config error handling
+  - [x] 11.4 Write property test for config error handling
     - **Property 11: Config Error Handling**
     - Test malformed JSON raises VE402, invalid options raise VE401
     - **Validates: Requirements 6.5, 6.6**
