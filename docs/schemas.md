@@ -493,3 +493,16 @@ Examples:
 | Data files | `0600` | Read/write for owner only |
 | Backup files | `0600` | Read/write for owner only |
 | Data directory | `0700` | Full access for owner only |
+
+
+## Cross-References
+
+This document relates to other vince CLI documentation:
+
+| Document | Relationship |
+| --- | --- |
+| [states.md](states.md) | State enum values for `DefaultEntry.state` and `OfferEntry.state` fields |
+| [config.md](config.md) | Configuration options including `data_dir` location |
+| [tables.md](tables.md) | Single Source of Truth for all definitions |
+| [api.md](api.md) | Command interfaces that create and modify schema entries |
+| [errors.md](errors.md) | Error codes for schema validation failures |

@@ -197,6 +197,8 @@ vince set /usr/bin/vim --md
 
 ### Default State Diagram
 
+The following diagram represents the valid transitions defined in `VALID_TRANSITIONS` from `vince/state/default_state.py`:
+
 ```mermaid
 stateDiagram-v2
     [*] --> none: Initial
@@ -216,6 +218,18 @@ stateDiagram-v2
     note right of pending: Default identified,\nnot yet active
     note right of active: Default is set\nand operational
     note right of removed: Soft-deleted,\ncan be restored
+```
+
+**Source Code Reference:**
+
+```python
+# From vince/state/default_state.py
+VALID_TRANSITIONS: dict[DefaultState, Set[DefaultState]] = {
+    DefaultState.NONE: {DefaultState.PENDING, DefaultState.ACTIVE},
+    DefaultState.PENDING: {DefaultState.ACTIVE, DefaultState.NONE},
+    DefaultState.ACTIVE: {DefaultState.REMOVED},
+    DefaultState.REMOVED: {DefaultState.ACTIVE},
+}
 ```
 
 ## Offer Lifecycle
@@ -359,6 +373,8 @@ vince reject mycode .
 
 ### Offer State Diagram
 
+The following diagram represents the valid transitions defined in `VALID_TRANSITIONS` from `vince/state/offer_state.py`:
+
 ```mermaid
 stateDiagram-v2
     [*] --> none: Initial
@@ -370,12 +386,24 @@ stateDiagram-v2
     
     active --> rejected: reject
     
-    rejected --> [*]: cleanup
+    rejected --> [*]: cleanup (terminal state)
     
     note right of none: No offer exists
     note right of created: Offer available,\nnot yet used
     note right of active: Offer has been\nused at least once
-    note right of rejected: Offer removed,\npending cleanup
+    note right of rejected: Terminal state,\nno transitions allowed
+```
+
+**Source Code Reference:**
+
+```python
+# From vince/state/offer_state.py
+VALID_TRANSITIONS: dict[OfferState, Set[OfferState]] = {
+    OfferState.NONE: {OfferState.CREATED},
+    OfferState.CREATED: {OfferState.ACTIVE, OfferState.REJECTED},
+    OfferState.ACTIVE: {OfferState.REJECTED},
+    OfferState.REJECTED: set(),  # Terminal state - no valid transitions
+}
 ```
 
 ## Invalid Transitions
@@ -384,19 +412,57 @@ Certain state transitions are not permitted and will result in specific error co
 
 ### Invalid Default Transitions
 
+The `validate_transition` function in `vince/state/default_state.py` handles these invalid cases:
+
 | Current State | Attempted Action | Error Code | Message | Recovery |
 |---------------|------------------|------------|---------|----------|
 | none | `chop` / `forget` | VE302 | No default set for {ext} | Use `slap` or `set` first |
+| none | Direct transition to removed | VE302 | No default set for {ext} | Use `slap` or `set` first |
 | active | `slap` (without removing) | VE301 | Default already exists for {ext} | Use `chop` to remove first |
 | active | `set` (same extension) | VE301 | Default already exists for {ext} | Use `chop` to remove first |
+| pending | Direct transition to removed | InvalidTransitionError | Invalid transition: pending → removed | Use `chop` to go to none first |
+
+**Source Code Reference:**
+
+```python
+# From vince/state/default_state.py validate_transition()
+if current == DefaultState.NONE and target == DefaultState.REMOVED:
+    raise NoDefaultError(extension)  # VE302
+
+if current == DefaultState.ACTIVE and target in {DefaultState.PENDING, DefaultState.ACTIVE}:
+    raise DefaultExistsError(extension)  # VE301
+
+if current == DefaultState.PENDING and target == DefaultState.REMOVED:
+    raise InvalidTransitionError(current, target, extension)
+```
 
 ### Invalid Offer Transitions
+
+The `validate_transition` function in `vince/state/offer_state.py` handles these invalid cases:
 
 | Current State | Attempted Action | Error Code | Message | Recovery |
 |---------------|------------------|------------|---------|----------|
 | none | `reject` | VE104 | Offer not found: {id} does not exist | Use `list -off` to see offers |
 | active | `reject` (in use) | VE304 | Cannot reject: offer {id} is in use | Wait for usage to complete |
 | created/active | `offer` (same ID) | VE303 | Offer already exists: {id} | Use different offer_id |
+| rejected | Any transition | InvalidOfferTransitionError | Invalid transition: rejected → {target} | Create new offer (terminal state) |
+
+**Source Code Reference:**
+
+```python
+# From vince/state/offer_state.py validate_transition()
+if current == OfferState.ACTIVE and target == OfferState.REJECTED and in_use:
+    raise OfferInUseError(offer_id)  # VE304
+
+if current == OfferState.NONE and target == OfferState.REJECTED:
+    raise OfferNotFoundError(offer_id)  # VE104
+
+if current in {OfferState.CREATED, OfferState.ACTIVE} and target == OfferState.CREATED:
+    raise OfferExistsError(offer_id)  # VE303
+
+if current == OfferState.REJECTED:
+    raise InvalidOfferTransitionError(current, target, offer_id)  # Terminal state
+```
 
 ### Invalid Transition Diagram
 
@@ -449,7 +515,29 @@ When an invalid transition is attempted, the system:
 
 ## Cross-References
 
-- See [errors.md](errors.md) for complete error code documentation
-- See [schemas.md](schemas.md) for defaults.json and offers.json schemas
-- See [api.md](api.md) for command interface specifications
-- See [tables.md](tables.md) for STATES table definitions
+### Related Documentation
+
+| Document | Relevance |
+|----------|-----------|
+| [tables.md](tables.md) | STATES table with all state definitions (def-none, def-pend, def-actv, def-rmvd, off-none, off-crtd, off-actv, off-rjct) |
+| [errors.md](errors.md) | Error codes for invalid transitions (VE301, VE302, VE303, VE304, VE104) |
+| [schemas.md](schemas.md) | JSON schemas showing `state` field in DefaultEntry and OfferEntry |
+| [api.md](api.md) | Command interface specifications that trigger state transitions |
+
+### Source Code References
+
+| Module | Purpose |
+|--------|---------|
+| `vince/state/default_state.py` | DefaultState enum and VALID_TRANSITIONS |
+| `vince/state/offer_state.py` | OfferState enum and VALID_TRANSITIONS |
+| `vince/errors.py` | Error classes for invalid transitions |
+
+### State-Related Error Codes
+
+| Code | Class | Used For |
+|------|-------|----------|
+| VE301 | DefaultExistsError | Attempting to create when active default exists |
+| VE302 | NoDefaultError | Attempting to remove when no default exists |
+| VE303 | OfferExistsError | Attempting to create when offer already exists |
+| VE304 | OfferInUseError | Attempting to reject an active offer that is in use |
+| VE104 | OfferNotFoundError | Attempting to reject when no offer exists |

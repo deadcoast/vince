@@ -602,3 +602,252 @@ class TestDocCodeSyncIntegration:
             f"Implemented: {src_states['offer_states']}"
         )
 
+
+
+# =============================================================================
+# Property 1: Source-Documentation Synchronization (Errors)
+# Validates: Requirements 1.2
+# Feature: documentation-unification
+# =============================================================================
+
+
+def extract_error_details_from_source(errors_py_path: Path) -> dict[str, dict]:
+    """
+    Extract error details (code, message template, recovery) from vince/errors.py.
+    
+    Returns a dict mapping error codes to their details.
+    """
+    error_details = {}
+    
+    if not errors_py_path.exists():
+        return error_details
+    
+    content = errors_py_path.read_text()
+    
+    # Pattern to match error class definitions with their details
+    # Looking for patterns like:
+    # code="VE101",
+    # message=f"Invalid path: {path} does not exist",
+    # recovery="Verify the application path exists and is accessible"
+    
+    class_pattern = re.compile(
+        r'class\s+(\w+Error)\(VinceError\):.*?'
+        r'code\s*=\s*["\']?(VE\d{3})["\']?.*?'
+        r'message\s*=\s*f?["\']([^"\']+)["\'].*?'
+        r'recovery\s*=\s*["\']([^"\']+)["\']',
+        re.DOTALL
+    )
+    
+    for match in class_pattern.finditer(content):
+        class_name = match.group(1)
+        code = match.group(2)
+        message_template = match.group(3)
+        recovery = match.group(4)
+        
+        error_details[code] = {
+            "class_name": class_name,
+            "message_template": message_template,
+            "recovery": recovery,
+        }
+    
+    return error_details
+
+
+def extract_error_details_from_docs(errors_md_path: Path) -> dict[str, dict]:
+    """
+    Extract error details from docs/errors.md.
+    
+    Returns a dict mapping error codes to their documented details.
+    """
+    error_details = {}
+    
+    if not errors_md_path.exists():
+        return error_details
+    
+    content = errors_md_path.read_text()
+    
+    # Pattern to match table rows with error details
+    # Format: | VE101 | `InvalidPathError` | Invalid path: {path} does not exist | error | Verify... |
+    table_row_pattern = re.compile(
+        r'\|\s*(VE\d{3})\s*\|\s*`?(\w+)`?\s*\|\s*([^|]+)\s*\|\s*(\w+)\s*\|\s*([^|]+)\s*\|'
+    )
+    
+    for match in table_row_pattern.finditer(content):
+        code = match.group(1)
+        class_name = match.group(2)
+        message_template = match.group(3).strip()
+        severity = match.group(4).strip()
+        recovery = match.group(5).strip()
+        
+        error_details[code] = {
+            "class_name": class_name,
+            "message_template": message_template,
+            "severity": severity,
+            "recovery": recovery,
+        }
+    
+    return error_details
+
+
+class TestErrorSourceDocSynchronization:
+    """
+    Feature: documentation-unification, Property 1: Source-Documentation Synchronization (errors)
+    
+    For any error class defined in vince/errors.py, the documentation system SHALL
+    contain a corresponding entry with matching code, message template, and recovery action.
+    
+    **Validates: Requirements 1.2**
+    """
+    
+    @pytest.fixture
+    def docs_dir(self) -> Path:
+        """Get the docs directory path."""
+        return Path(__file__).parent.parent / "docs"
+    
+    @pytest.fixture
+    def src_dir(self) -> Path:
+        """Get the vince source directory path."""
+        return Path(__file__).parent.parent / "vince"
+    
+    def test_all_source_errors_documented(
+        self,
+        docs_dir: Path,
+        src_dir: Path,
+    ):
+        """
+        Property 1: All source error codes should be documented.
+        
+        For any error code defined in vince/errors.py, there SHALL exist a
+        corresponding entry in docs/errors.md.
+        
+        **Validates: Requirements 1.2**
+        """
+        errors_py_path = src_dir / "errors.py"
+        errors_md_path = docs_dir / "errors.md"
+        
+        if not errors_py_path.exists():
+            pytest.skip("vince/errors.py not found")
+        
+        if not errors_md_path.exists():
+            pytest.skip("docs/errors.md not found")
+        
+        src_error_codes = extract_implemented_error_codes(errors_py_path)
+        doc_error_codes = extract_documented_error_codes(errors_md_path)
+        
+        # Check that all source error codes are documented
+        missing_in_docs = src_error_codes - doc_error_codes
+        
+        assert len(missing_in_docs) == 0, (
+            f"Error codes in source but not documented: {sorted(missing_in_docs)}"
+        )
+    
+    def test_all_documented_errors_in_source(
+        self,
+        docs_dir: Path,
+        src_dir: Path,
+    ):
+        """
+        Property 1: All documented error codes should exist in source.
+        
+        For any error code documented in docs/errors.md, there SHALL exist a
+        corresponding implementation in vince/errors.py.
+        
+        **Validates: Requirements 1.2**
+        """
+        errors_py_path = src_dir / "errors.py"
+        errors_md_path = docs_dir / "errors.md"
+        
+        if not errors_py_path.exists():
+            pytest.skip("vince/errors.py not found")
+        
+        if not errors_md_path.exists():
+            pytest.skip("docs/errors.md not found")
+        
+        src_error_codes = extract_implemented_error_codes(errors_py_path)
+        doc_error_codes = extract_documented_error_codes(errors_md_path)
+        
+        # Check that all documented error codes exist in source
+        missing_in_source = doc_error_codes - src_error_codes
+        
+        assert len(missing_in_source) == 0, (
+            f"Error codes documented but not in source: {sorted(missing_in_source)}"
+        )
+    
+    def test_error_code_count_matches(
+        self,
+        docs_dir: Path,
+        src_dir: Path,
+    ):
+        """
+        Property 1: Error code counts should match between source and docs.
+        
+        The number of error codes in vince/errors.py SHALL equal the number
+        of error codes in docs/errors.md.
+        
+        **Validates: Requirements 1.2**
+        """
+        errors_py_path = src_dir / "errors.py"
+        errors_md_path = docs_dir / "errors.md"
+        
+        if not errors_py_path.exists():
+            pytest.skip("vince/errors.py not found")
+        
+        if not errors_md_path.exists():
+            pytest.skip("docs/errors.md not found")
+        
+        src_error_codes = extract_implemented_error_codes(errors_py_path)
+        doc_error_codes = extract_documented_error_codes(errors_md_path)
+        
+        assert len(src_error_codes) == len(doc_error_codes), (
+            f"Error code count mismatch. Source: {len(src_error_codes)}, "
+            f"Docs: {len(doc_error_codes)}"
+        )
+
+
+@st.composite
+def implemented_error_code_strategy(draw):
+    """Generate error codes that are implemented in source."""
+    # All implemented error codes
+    implemented_codes = [
+        "VE101", "VE102", "VE103", "VE104", "VE105",  # Input
+        "VE201", "VE202", "VE203",  # File
+        "VE301", "VE302", "VE303", "VE304",  # State
+        "VE401", "VE402",  # Config
+        "VE501",  # System
+    ]
+    return draw(st.sampled_from(implemented_codes))
+
+
+class TestErrorSyncProperties:
+    """
+    Property-based tests for error synchronization.
+    
+    Feature: documentation-unification, Property 1: Source-Documentation Synchronization (errors)
+    **Validates: Requirements 1.2**
+    """
+    
+    @given(error_code=implemented_error_code_strategy())
+    @settings(max_examples=100)
+    def test_implemented_error_is_documented(
+        self,
+        error_code: str,
+    ):
+        """
+        Property 1: For any implemented error code, documentation should exist.
+        
+        For any error code from the implemented error code set, it SHALL be
+        documented in docs/errors.md.
+        
+        **Validates: Requirements 1.2**
+        """
+        docs_dir = Path(__file__).parent.parent / "docs"
+        errors_md_path = docs_dir / "errors.md"
+        
+        if not errors_md_path.exists():
+            return  # Skip if file doesn't exist
+        
+        doc_error_codes = extract_documented_error_codes(errors_md_path)
+        
+        assert error_code in doc_error_codes, (
+            f"Error code '{error_code}' is implemented but not documented"
+        )

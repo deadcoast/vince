@@ -6,150 +6,150 @@ This implementation plan provides a systematic approach to unifying the vince CL
 
 ## Tasks
 
-- [ ] 1. Gap Analysis and Baseline
-  - [ ] 1.1 Run existing validation script and capture baseline errors
+- [x] 1. Gap Analysis and Baseline
+  - [x] 1.1 Run existing validation script and capture baseline errors
     - Execute `python validate_docs.py --all --report`
     - Document all current validation failures
     - _Requirements: 2.1-2.8_
-  - [ ] 1.2 Extract source code definitions for comparison
+  - [x] 1.2 Extract source code definitions for comparison
     - Extract error classes from `vince/errors.py`
     - Extract states from `vince/state/default_state.py` and `vince/state/offer_state.py`
     - Extract validation patterns from `vince/validation/`
     - Extract config options from `vince/config.py`
     - Extract supported extensions from `vince/validation/extension.py`
     - _Requirements: 1.1-1.5_
-  - [ ] 1.3 Generate gap report comparing source to documentation
+  - [x] 1.3 Generate gap report comparing source to documentation
     - Compare extracted errors against `docs/errors.md`
     - Compare extracted states against `docs/states.md`
     - Compare extracted patterns against `docs/overview.md`
     - Compare extracted extensions against `docs/tables.md`
     - _Requirements: 1.1-1.5, 3.2-3.5_
 
-- [ ] 2. Update tables.md (Single Source of Truth)
-  - [ ] 2.1 Update COMMANDS table
+- [x] 2. Update tables.md (Single Source of Truth)
+  - [x] 2.1 Update COMMANDS table
     - Verify all 7 commands have id, sid, rid, description
     - Ensure commands match `vince/commands/` implementations
     - _Requirements: 8.1, 3.5_
-  - [ ] 2.2 Update FILE_TYPES table
+  - [x] 2.2 Update FILE_TYPES table
     - Verify all 12 extensions from SUPPORTED_EXTENSIONS are listed
     - Ensure id, full_id, ext, sid, flag_short, flag_long columns are complete
     - _Requirements: 8.2, 1.5_
-  - [ ] 2.3 Update ERRORS table
+  - [x] 2.3 Update ERRORS table
     - Add all 15 error codes from `vince/errors.py`
     - Ensure code, sid, category, message, severity columns are complete
     - _Requirements: 8.3, 1.2, 3.4_
-  - [ ] 2.4 Update STATES table
+  - [x] 2.4 Update STATES table
     - Add all 4 DefaultState values and 4 OfferState values
     - Ensure id, sid, entity, description columns are complete
     - _Requirements: 8.4, 6.1, 6.2_
-  - [ ] 2.5 Update CONFIG_OPTIONS table
+  - [x] 2.5 Update CONFIG_OPTIONS table
     - Verify all 7 config options from `vince/config.py`
     - Ensure key, sid, type, default, description columns are complete
     - _Requirements: 8.5, 1.4_
-  - [ ] 2.6 Verify no duplicate sid values across all tables
+  - [x] 2.6 Verify no duplicate sid values across all tables
     - Scan all tables for sid column
     - Report and fix any duplicates
     - _Requirements: 8.6_
-  - [ ] 2.7 Write property test for tables.md completeness
+  - [x] 2.7 Write property test for tables.md completeness
     - **Property 8: Tables.md Completeness**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6**
 
-- [ ] 3. Checkpoint - Validate tables.md
+- [x] 3. Checkpoint - Validate tables.md
   - Run `python validate_docs.py --file tables.md`
   - Ensure all table syntax validations pass
   - Ensure all entry field completeness validations pass
 
-- [ ] 4. Update errors.md
-  - [ ] 4.1 Synchronize error catalog with source code
+- [x] 4. Update errors.md
+  - [x] 4.1 Synchronize error catalog with source code
     - Match all error codes to `vince/errors.py` classes
     - Update message templates to match source
     - Update recovery actions to match source
     - _Requirements: 1.2, 3.4_
-  - [ ] 4.2 Ensure error categories match code ranges
+  - [x] 4.2 Ensure error categories match code ranges
     - VE1xx = Input errors
     - VE2xx = File errors
     - VE3xx = State errors
     - VE4xx = Config errors
     - VE5xx = System errors
     - _Requirements: 1.2_
-  - [ ] 4.3 Add cross-references section
+  - [x] 4.3 Add cross-references section
     - Link to tables.md ERRORS table
     - Link to api.md for command exceptions
     - Link to states.md for state errors
     - _Requirements: 3.1, 10.2_
-  - [ ] 4.4 Write property test for error synchronization
+  - [x] 4.4 Write property test for error synchronization
     - **Property 1: Source-Documentation Synchronization (errors)**
     - **Validates: Requirements 1.2**
 
-- [ ] 5. Update states.md
-  - [ ] 5.1 Synchronize DefaultState documentation
+- [x] 5. Update states.md
+  - [x] 5.1 Synchronize DefaultState documentation
     - Match states to `DefaultState` enum values
     - Match transitions to `VALID_TRANSITIONS` dict
     - Update state diagram to match code
     - _Requirements: 6.1, 6.3, 6.5_
-  - [ ] 5.2 Synchronize OfferState documentation
+  - [x] 5.2 Synchronize OfferState documentation
     - Match states to `OfferState` enum values
     - Match transitions to `VALID_TRANSITIONS` dict
     - Update state diagram to match code
     - _Requirements: 6.2, 6.3, 6.5_
-  - [ ] 5.3 Update invalid transitions section
+  - [x] 5.3 Update invalid transitions section
     - Document error codes for invalid transitions
     - Match to `validate_transition` function behavior
     - _Requirements: 6.4_
-  - [ ] 5.4 Add cross-references section
+  - [x] 5.4 Add cross-references section
     - Link to tables.md STATES table
     - Link to errors.md for transition errors
     - Link to schemas.md for state field
     - _Requirements: 3.1, 10.2_
-  - [ ] 5.5 Write property test for state machine accuracy
+  - [x] 5.5 Write property test for state machine accuracy
     - **Property 6: State Machine Documentation Accuracy**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.5**
 
-- [ ] 6. Checkpoint - Validate core state documentation
+- [x] 6. Checkpoint - Validate core state documentation
   - Run `python validate_docs.py --file errors.md --file states.md`
   - Ensure all validations pass
 
-- [ ] 7. Update schemas.md
-  - [ ] 7.1 Synchronize DefaultEntry schema
+- [x] 7. Update schemas.md
+  - [x] 7.1 Synchronize DefaultEntry schema
     - Match fields to `DefaultsStore.add()` method
     - Verify required vs optional fields
     - Verify state enum values
     - _Requirements: 5.1, 5.3, 5.5_
-  - [ ] 7.2 Synchronize OfferEntry schema
+  - [x] 7.2 Synchronize OfferEntry schema
     - Match fields to `OffersStore.add()` method
     - Verify required vs optional fields
     - Verify state enum values
     - _Requirements: 5.2, 5.3, 5.5_
-  - [ ] 7.3 Verify timestamp format documentation
+  - [x] 7.3 Verify timestamp format documentation
     - Ensure ISO 8601 format is documented for all timestamp fields
     - Match to `datetime.now(timezone.utc).isoformat()` usage
     - _Requirements: 5.4_
-  - [ ] 7.4 Add cross-references section
+  - [x] 7.4 Add cross-references section
     - Link to states.md for state values
     - Link to config.md for data_dir location
     - _Requirements: 3.1, 10.2_
-  - [ ] 7.5 Write property test for schema accuracy
+  - [x] 7.5 Write property test for schema accuracy
     - **Property 5: Schema Documentation Accuracy**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-- [ ] 8. Update api.md
-  - [ ] 8.1 Synchronize command function signatures
+- [x] 8. Update api.md
+  - [x] 8.1 Synchronize command function signatures
     - Match parameters to actual Typer decorators in `vince/commands/`
     - Verify parameter names, types, and defaults
     - _Requirements: 4.1, 4.4_
-  - [ ] 8.2 Update extension flag documentation
+  - [x] 8.2 Update extension flag documentation
     - Ensure all 12 extensions from SUPPORTED_EXTENSIONS are listed
     - Match flag syntax to actual Option definitions
     - _Requirements: 4.2_
-  - [ ] 8.3 Update exception documentation per command
+  - [x] 8.3 Update exception documentation per command
     - Document which error codes each command can raise
     - Match to actual exception handling in command implementations
     - _Requirements: 4.3_
-  - [ ] 8.4 Add cross-references section
+  - [x] 8.4 Add cross-references section
     - Link to tables.md for command definitions
     - Link to errors.md for exception details
     - _Requirements: 3.1, 10.2_
-  - [ ] 8.5 Write property test for API completeness
+  - [x] 8.5 Write property test for API completeness
     - **Property 4: API Documentation Completeness**
     - **Validates: Requirements 4.1, 4.2, 4.4**
 

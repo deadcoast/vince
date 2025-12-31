@@ -45,7 +45,7 @@ Each command is registered using the `@app.command()` decorator:
 @app.command()
 def slap(
     path: Path = Argument(..., help="Path to application executable"),
-    extension: Optional[str] = Option(None, "--md", "--py", help="File extension"),
+    md: bool = Option(False, "--md", help="Target .md files"),
     set_default: bool = Option(False, "-set", help="Set as default"),
     verbose: bool = Option(False, "-vb", "--verbose", help="Verbose output"),
 ) -> None:
@@ -90,7 +90,6 @@ if __name__ == "__main__":
 
 ## Command Interfaces
 
-
 ### slap
 
 Set an application as the default for a file extension.
@@ -108,20 +107,27 @@ def cmd_slap(
         dir_okay=False,
         resolve_path=True,
     ),
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Target file extension",
-    ),
+    md: bool = Option(False, "--md", help="Target .md files"),
+    py: bool = Option(False, "--py", help="Target .py files"),
+    txt: bool = Option(False, "--txt", help="Target .txt files"),
+    js: bool = Option(False, "--js", help="Target .js files"),
+    html: bool = Option(False, "--html", help="Target .html files"),
+    css: bool = Option(False, "--css", help="Target .css files"),
+    json_ext: bool = Option(False, "--json", help="Target .json files"),
+    yml: bool = Option(False, "--yml", help="Target .yml files"),
+    yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+    xml: bool = Option(False, "--xml", help="Target .xml files"),
+    csv: bool = Option(False, "--csv", help="Target .csv files"),
+    sql: bool = Option(False, "--sql", help="Target .sql files"),
     set_default: bool = Option(
         False,
         "-set",
-        help="Set as default immediately",
+        help="Set as default immediately (creates active state and auto-creates offer)",
     ),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -134,7 +140,18 @@ def cmd_slap(
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `path` | `Path` | Required | Path to the application executable. Must exist and be a file. |
-| `extension` | `Optional[str]` | `None` | Target file extension (e.g., `--md`, `--py`). |
+| `md` | `bool` | `False` | Target .md files |
+| `py` | `bool` | `False` | Target .py files |
+| `txt` | `bool` | `False` | Target .txt files |
+| `js` | `bool` | `False` | Target .js files |
+| `html` | `bool` | `False` | Target .html files |
+| `css` | `bool` | `False` | Target .css files |
+| `json_ext` | `bool` | `False` | Target .json files |
+| `yml` | `bool` | `False` | Target .yml files |
+| `yaml` | `bool` | `False` | Target .yaml files |
+| `xml` | `bool` | `False` | Target .xml files |
+| `csv` | `bool` | `False` | Target .csv files |
+| `sql` | `bool` | `False` | Target .sql files |
 | `set_default` | `bool` | `False` | If `True`, sets the application as default immediately. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
@@ -145,7 +162,7 @@ Returns `None`. Output is displayed via Rich console.
 #### Semantics
 
 1. Validates that `path` exists and is an executable file
-2. If `extension` is provided, associates the application with that extension
+2. Determines extension from the boolean flags (first True flag wins)
 3. If `set_default` is `True`, marks the association as active
 4. When `set_default` is used, an offer is automatically created for the pairing
 
@@ -154,8 +171,9 @@ Returns `None`. Output is displayed via Rich console.
 | Error Code | Condition | Message |
 | --- | --- | --- |
 | `VE101` | Path does not exist | Invalid path: {path} does not exist |
-| `VE201` | File not found | File not found: {path} |
-| `VE301` | Default already exists | Default already exists for {ext} |
+| `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
+| `VE301` | Default already exists (active state) | Default already exists for {ext} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -168,20 +186,27 @@ Remove or forget a file extension association.
 ```python
 @app.command(name="chop")
 def cmd_chop(
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Target file extension to remove",
-    ),
+    md: bool = Option(False, "--md", help="Target .md files"),
+    py: bool = Option(False, "--py", help="Target .py files"),
+    txt: bool = Option(False, "--txt", help="Target .txt files"),
+    js: bool = Option(False, "--js", help="Target .js files"),
+    html: bool = Option(False, "--html", help="Target .html files"),
+    css: bool = Option(False, "--css", help="Target .css files"),
+    json_ext: bool = Option(False, "--json", help="Target .json files"),
+    yml: bool = Option(False, "--yml", help="Target .yml files"),
+    yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+    xml: bool = Option(False, "--xml", help="Target .xml files"),
+    csv: bool = Option(False, "--csv", help="Target .csv files"),
+    sql: bool = Option(False, "--sql", help="Target .sql files"),
     forget: bool = Option(
         False,
         "-forget",
-        help="Forget the default association",
+        help="Forget the default (transition to removed state)",
     ),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -193,7 +218,18 @@ def cmd_chop(
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `extension` | `Optional[str]` | `None` | Target file extension to remove (e.g., `--md`). |
+| `md` | `bool` | `False` | Target .md files |
+| `py` | `bool` | `False` | Target .py files |
+| `txt` | `bool` | `False` | Target .txt files |
+| `js` | `bool` | `False` | Target .js files |
+| `html` | `bool` | `False` | Target .html files |
+| `css` | `bool` | `False` | Target .css files |
+| `json_ext` | `bool` | `False` | Target .json files |
+| `yml` | `bool` | `False` | Target .yml files |
+| `yaml` | `bool` | `False` | Target .yaml files |
+| `xml` | `bool` | `False` | Target .xml files |
+| `csv` | `bool` | `False` | Target .csv files |
+| `sql` | `bool` | `False` | Target .sql files |
 | `forget` | `bool` | `False` | If `True`, forgets the default association. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
@@ -205,9 +241,9 @@ Returns `None`. Output is displayed via Rich console.
 
 | Error Code | Condition | Message |
 | --- | --- | --- |
-| `VE102` | Invalid extension | Invalid extension: {ext} is not supported |
-| `VE202` | Permission denied | Permission denied: cannot access {path} |
+| `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE302` | No default set | No default set for {ext} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -228,15 +264,22 @@ def cmd_set(
         dir_okay=False,
         resolve_path=True,
     ),
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Target file extension",
-    ),
+    md: bool = Option(False, "--md", help="Target .md files"),
+    py: bool = Option(False, "--py", help="Target .py files"),
+    txt: bool = Option(False, "--txt", help="Target .txt files"),
+    js: bool = Option(False, "--js", help="Target .js files"),
+    html: bool = Option(False, "--html", help="Target .html files"),
+    css: bool = Option(False, "--css", help="Target .css files"),
+    json_ext: bool = Option(False, "--json", help="Target .json files"),
+    yml: bool = Option(False, "--yml", help="Target .yml files"),
+    yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+    xml: bool = Option(False, "--xml", help="Target .xml files"),
+    csv: bool = Option(False, "--csv", help="Target .csv files"),
+    sql: bool = Option(False, "--sql", help="Target .sql files"),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -249,7 +292,18 @@ def cmd_set(
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `path` | `Path` | Required | Path to the application executable. Must exist and be a file. |
-| `extension` | `Optional[str]` | `None` | Target file extension (e.g., `--md`, `--py`). |
+| `md` | `bool` | `False` | Target .md files |
+| `py` | `bool` | `False` | Target .py files |
+| `txt` | `bool` | `False` | Target .txt files |
+| `js` | `bool` | `False` | Target .js files |
+| `html` | `bool` | `False` | Target .html files |
+| `css` | `bool` | `False` | Target .css files |
+| `json_ext` | `bool` | `False` | Target .json files |
+| `yml` | `bool` | `False` | Target .yml files |
+| `yaml` | `bool` | `False` | Target .yaml files |
+| `xml` | `bool` | `False` | Target .xml files |
+| `csv` | `bool` | `False` | Target .csv files |
+| `sql` | `bool` | `False` | Target .sql files |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -261,8 +315,9 @@ Returns `None`. Output is displayed via Rich console.
 | Error Code | Condition | Message |
 | --- | --- | --- |
 | `VE101` | Path does not exist | Invalid path: {path} does not exist |
-| `VE201` | File not found | File not found: {path} |
-| `VE301` | Default already exists | Default already exists for {ext} |
+| `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
+| `VE301` | Default already exists (active state) | Default already exists for {ext} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -275,15 +330,22 @@ Forget a default for a file extension.
 ```python
 @app.command(name="forget")
 def cmd_forget(
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Target file extension to forget",
-    ),
+    md: bool = Option(False, "--md", help="Target .md files"),
+    py: bool = Option(False, "--py", help="Target .py files"),
+    txt: bool = Option(False, "--txt", help="Target .txt files"),
+    js: bool = Option(False, "--js", help="Target .js files"),
+    html: bool = Option(False, "--html", help="Target .html files"),
+    css: bool = Option(False, "--css", help="Target .css files"),
+    json_ext: bool = Option(False, "--json", help="Target .json files"),
+    yml: bool = Option(False, "--yml", help="Target .yml files"),
+    yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+    xml: bool = Option(False, "--xml", help="Target .xml files"),
+    csv: bool = Option(False, "--csv", help="Target .csv files"),
+    sql: bool = Option(False, "--sql", help="Target .sql files"),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -295,7 +357,18 @@ def cmd_forget(
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `extension` | `Optional[str]` | `None` | Target file extension to forget (e.g., `--md`). |
+| `md` | `bool` | `False` | Target .md files |
+| `py` | `bool` | `False` | Target .py files |
+| `txt` | `bool` | `False` | Target .txt files |
+| `js` | `bool` | `False` | Target .js files |
+| `html` | `bool` | `False` | Target .html files |
+| `css` | `bool` | `False` | Target .css files |
+| `json_ext` | `bool` | `False` | Target .json files |
+| `yml` | `bool` | `False` | Target .yml files |
+| `yaml` | `bool` | `False` | Target .yaml files |
+| `xml` | `bool` | `False` | Target .xml files |
+| `csv` | `bool` | `False` | Target .csv files |
+| `sql` | `bool` | `False` | Target .sql files |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -306,8 +379,9 @@ Returns `None`. Output is displayed via Rich console.
 
 | Error Code | Condition | Message |
 | --- | --- | --- |
-| `VE102` | Invalid extension | Invalid extension: {ext} is not supported |
+| `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE302` | No default set | No default set for {ext} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -322,7 +396,7 @@ Create a custom shortcut/alias for a file extension default.
 def cmd_offer(
     offer_id: str = Argument(
         ...,
-        help="Custom shortcut/alias identifier",
+        help="Unique identifier for the offer (lowercase alphanumeric, hyphens, underscores)",
     ),
     path: Path = Argument(
         ...,
@@ -332,15 +406,22 @@ def cmd_offer(
         dir_okay=False,
         resolve_path=True,
     ),
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Target file extension",
-    ),
+    md: bool = Option(False, "--md", help="Target .md files"),
+    py: bool = Option(False, "--py", help="Target .py files"),
+    txt: bool = Option(False, "--txt", help="Target .txt files"),
+    js: bool = Option(False, "--js", help="Target .js files"),
+    html: bool = Option(False, "--html", help="Target .html files"),
+    css: bool = Option(False, "--css", help="Target .css files"),
+    json_ext: bool = Option(False, "--json", help="Target .json files"),
+    yml: bool = Option(False, "--yml", help="Target .yml files"),
+    yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+    xml: bool = Option(False, "--xml", help="Target .xml files"),
+    csv: bool = Option(False, "--csv", help="Target .csv files"),
+    sql: bool = Option(False, "--sql", help="Target .sql files"),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -354,7 +435,18 @@ def cmd_offer(
 | --- | --- | --- | --- |
 | `offer_id` | `str` | Required | Custom shortcut/alias identifier. Must match pattern `^[a-z][a-z0-9_-]{0,31}$`. |
 | `path` | `Path` | Required | Path to the application executable. Must exist and be a file. |
-| `extension` | `Optional[str]` | `None` | Target file extension (e.g., `--md`, `--py`). |
+| `md` | `bool` | `False` | Target .md files |
+| `py` | `bool` | `False` | Target .py files |
+| `txt` | `bool` | `False` | Target .txt files |
+| `js` | `bool` | `False` | Target .js files |
+| `html` | `bool` | `False` | Target .html files |
+| `css` | `bool` | `False` | Target .css files |
+| `json_ext` | `bool` | `False` | Target .json files |
+| `yml` | `bool` | `False` | Target .yml files |
+| `yaml` | `bool` | `False` | Target .yaml files |
+| `xml` | `bool` | `False` | Target .xml files |
+| `csv` | `bool` | `False` | Target .csv files |
+| `sql` | `bool` | `False` | Target .sql files |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -365,9 +457,11 @@ Returns `None`. Output is displayed via Rich console.
 
 | Error Code | Condition | Message |
 | --- | --- | --- |
+| `VE101` | Path does not exist | Invalid path: {path} does not exist |
+| `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE103` | Invalid offer_id format | Invalid offer_id: {id} does not match pattern |
-| `VE201` | File not found | File not found: {path} |
 | `VE303` | Offer already exists | Offer already exists: {id} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -382,16 +476,17 @@ Remove a custom offer.
 def cmd_reject(
     offer_id: str = Argument(
         ...,
-        help="Custom shortcut/alias identifier to remove",
+        help="The offer ID to reject",
     ),
     complete_delete: bool = Option(
         False,
-        ".",
-        help="Complete-delete: remove offer, its id, and all connections",
+        "-.",
+        help="Complete delete - remove offer entirely from data file",
     ),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -404,7 +499,7 @@ def cmd_reject(
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
 | `offer_id` | `str` | Required | Custom shortcut/alias identifier to remove. |
-| `complete_delete` | `bool` | `False` | If `True` (using `.`), removes offer, its id, and all connections. |
+| `complete_delete` | `bool` | `False` | If `True` (using `-.`), removes offer entirely from data file. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -416,7 +511,7 @@ Returns `None`. Output is displayed via Rich console.
 | Error Code | Condition | Message |
 | --- | --- | --- |
 | `VE104` | Offer not found | Offer not found: {id} does not exist |
-| `VE304` | Cannot reject | Cannot reject: offer {id} is in use |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ---
 
@@ -429,20 +524,28 @@ Display tracked assets and offers.
 ```python
 @app.command(name="list")
 def cmd_list(
-    subsection: Optional[str] = Option(
-        None,
-        "-app", "-cmd", "-ext", "-def", "-off", "-all",
-        help="Subsection to display",
-    ),
-    extension: Optional[str] = Option(
-        None,
-        "--md", "--py", "--txt", "--js", "--html", "--css",
-        "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-        help="Filter by file extension",
-    ),
+    app: bool = Option(False, "-app", help="List applications"),
+    cmd: bool = Option(False, "-cmd", help="List commands"),
+    ext: bool = Option(False, "-ext", help="List extensions"),
+    defaults: bool = Option(False, "-def", help="List defaults"),
+    offers: bool = Option(False, "-off", help="List offers"),
+    all_sections: bool = Option(False, "-all", help="List all sections"),
+    md: bool = Option(False, "--md", help="Filter by .md extension"),
+    py: bool = Option(False, "--py", help="Filter by .py extension"),
+    txt: bool = Option(False, "--txt", help="Filter by .txt extension"),
+    js: bool = Option(False, "--js", help="Filter by .js extension"),
+    html: bool = Option(False, "--html", help="Filter by .html extension"),
+    css: bool = Option(False, "--css", help="Filter by .css extension"),
+    json_ext: bool = Option(False, "--json", help="Filter by .json extension"),
+    yml: bool = Option(False, "--yml", help="Filter by .yml extension"),
+    yaml: bool = Option(False, "--yaml", help="Filter by .yaml extension"),
+    xml: bool = Option(False, "--xml", help="Filter by .xml extension"),
+    csv: bool = Option(False, "--csv", help="Filter by .csv extension"),
+    sql: bool = Option(False, "--sql", help="Filter by .sql extension"),
     verbose: bool = Option(
         False,
-        "-vb", "--verbose",
+        "-vb",
+        "--verbose",
         help="Enable verbose output",
     ),
 ) -> None:
@@ -454,8 +557,24 @@ def cmd_list(
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `subsection` | `Optional[str]` | `None` | Subsection to display: `-app`, `-cmd`, `-ext`, `-def`, `-off`, or `-all`. |
-| `extension` | `Optional[str]` | `None` | Filter results by file extension. |
+| `app` | `bool` | `False` | List applications |
+| `cmd` | `bool` | `False` | List commands |
+| `ext` | `bool` | `False` | List extensions |
+| `defaults` | `bool` | `False` | List defaults |
+| `offers` | `bool` | `False` | List offers |
+| `all_sections` | `bool` | `False` | List all sections |
+| `md` | `bool` | `False` | Filter by .md extension |
+| `py` | `bool` | `False` | Filter by .py extension |
+| `txt` | `bool` | `False` | Filter by .txt extension |
+| `js` | `bool` | `False` | Filter by .js extension |
+| `html` | `bool` | `False` | Filter by .html extension |
+| `css` | `bool` | `False` | Filter by .css extension |
+| `json_ext` | `bool` | `False` | Filter by .json extension |
+| `yml` | `bool` | `False` | Filter by .yml extension |
+| `yaml` | `bool` | `False` | Filter by .yaml extension |
+| `xml` | `bool` | `False` | Filter by .xml extension |
+| `csv` | `bool` | `False` | Filter by .csv extension |
+| `sql` | `bool` | `False` | Filter by .sql extension |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -466,10 +585,11 @@ Returns `None`. Output is displayed via Rich console as formatted tables.
 
 | Error Code | Condition | Message |
 | --- | --- | --- |
+| `VE102` | Invalid extension filter | Invalid extension: {ext} is not supported |
 | `VE105` | Invalid subsection | Invalid list subsection: {section} |
+| `VE501` | Unexpected error | Unexpected error: {message} |
 
 ## Common Patterns
-
 
 ### Error Handling Pattern
 
@@ -491,7 +611,9 @@ class VinceError(Exception):
 
 def handle_error(error: VinceError) -> NoReturn:
     """Display error and exit with appropriate code."""
-    console.print(f"[error]✗[/] [{error.code}] {error.message}")
+    console.print(f"[red bold]✗ {error.code}:[/] {error.message}")
+    if error.recovery:
+        console.print(f"[cyan]ℹ[/] {error.recovery}")
     raise SystemExit(1)
 ```
 
@@ -515,16 +637,22 @@ def cmd_slap(
 
 ### Extension Flag Pattern
 
-Extension flags use a consistent pattern across commands:
+Extension flags use individual boolean options for each supported extension:
 
 ```python
-# Extension options are defined as multiple option names
-extension: Optional[str] = Option(
-    None,
-    "--md", "--py", "--txt", "--js", "--html", "--css",
-    "--json", "--yml", "--yaml", "--xml", "--csv", "--sql",
-    help="Target file extension",
-)
+# Extension options are defined as individual boolean flags
+md: bool = Option(False, "--md", help="Target .md files"),
+py: bool = Option(False, "--py", help="Target .py files"),
+txt: bool = Option(False, "--txt", help="Target .txt files"),
+js: bool = Option(False, "--js", help="Target .js files"),
+html: bool = Option(False, "--html", help="Target .html files"),
+css: bool = Option(False, "--css", help="Target .css files"),
+json_ext: bool = Option(False, "--json", help="Target .json files"),
+yml: bool = Option(False, "--yml", help="Target .yml files"),
+yaml: bool = Option(False, "--yaml", help="Target .yaml files"),
+xml: bool = Option(False, "--xml", help="Target .xml files"),
+csv: bool = Option(False, "--csv", help="Target .csv files"),
+sql: bool = Option(False, "--sql", help="Target .sql files"),
 ```
 
 ### Path Validation Pattern
@@ -542,11 +670,30 @@ path: Path = Argument(
 )
 ```
 
+## Supported Extensions
+
+All 12 supported file extensions from `SUPPORTED_EXTENSIONS`:
+
+| Extension | Flag | Description |
+| --- | --- | --- |
+| `.md` | `--md` | Markdown files |
+| `.py` | `--py` | Python files |
+| `.txt` | `--txt` | Text files |
+| `.js` | `--js` | JavaScript files |
+| `.html` | `--html` | HTML files |
+| `.css` | `--css` | CSS files |
+| `.json` | `--json` | JSON files |
+| `.yml` | `--yml` | YAML files |
+| `.yaml` | `--yaml` | YAML files |
+| `.xml` | `--xml` | XML files |
+| `.csv` | `--csv` | CSV files |
+| `.sql` | `--sql` | SQL files |
+
 ## Usage Examples
 
 ### Basic slap Usage
 
-```python
+```bash
 # Set an application for markdown files
 vince slap /usr/bin/code --md
 
@@ -559,17 +706,17 @@ vince slap /usr/bin/code -set --md -vb
 
 ### Basic chop Usage
 
-```python
+```bash
 # Remove default for markdown files
 vince chop --md -forget
 
-# Using wildcard operator
-vince chop . -forget --md
+# Show current default info (no state change)
+vince chop --md
 ```
 
 ### Basic set/forget Usage
 
-```python
+```bash
 # Set a default
 vince set /usr/bin/code --md
 
@@ -579,7 +726,7 @@ vince forget --md
 
 ### Basic offer/reject Usage
 
-```python
+```bash
 # Create an offer
 vince offer mycode /usr/bin/code --md
 
@@ -587,12 +734,12 @@ vince offer mycode /usr/bin/code --md
 vince reject mycode
 
 # Complete-delete an offer
-vince reject mycode .
+vince reject mycode -.
 ```
 
 ### Basic list Usage
 
-```python
+```bash
 # List all applications
 vince list -app
 
@@ -613,20 +760,29 @@ vince list -def --md
 
 ```python
 from pathlib import Path
-from vince.commands import cmd_slap, cmd_list
+from vince.commands.slap import cmd_slap
+from vince.commands.list_cmd import cmd_list
 
 # Set a default programmatically
 cmd_slap(
     path=Path("/usr/bin/code"),
-    extension="--md",
+    md=True,
     set_default=True,
     verbose=True,
 )
 
 # List defaults
 cmd_list(
-    subsection="-def",
-    extension=None,
+    defaults=True,
     verbose=False,
 )
 ```
+
+## Cross-References
+
+- [tables.md](tables.md) - Single Source of Truth for command definitions (COMMANDS table)
+- [errors.md](errors.md) - Complete error catalog with codes VE101-VE501
+- [states.md](states.md) - State machine documentation for defaults and offers
+- [schemas.md](schemas.md) - JSON schema definitions for data persistence
+- [config.md](config.md) - Configuration options and hierarchy
+- [examples.md](examples.md) - Additional usage examples
