@@ -281,19 +281,19 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error case (no default exists)
     - _Requirements: 9.4, 9.5_
 
-- [ ] 17. Implement set command
-  - [ ] 17.1 Implement cmd_set function
+- [x] 17. Implement set command
+  - [x] 17.1 Implement cmd_set function
     - Create vince/commands/set_cmd.py
     - Add path argument and extension option
     - Add -vb flag
     - Implement command logic
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ] 17.2 Register set command
+  - [x] 17.2 Register set command
     - Import and register in main.py
     - _Requirements: 10.1_
 
-  - [ ] 17.3 Write unit tests for set command
+  - [x] 17.3 Write unit tests for set command
     - Test successful set (active state)
     - Test error case (default exists)
     - _Requirements: 10.4, 10.5_

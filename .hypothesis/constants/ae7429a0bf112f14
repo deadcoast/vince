@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/output/__init__.py
+# hypothesis_version: 6.148.8
+
+['VINCE_THEME', 'console', 'create_offers_table', 'print_error', 'print_info', 'print_success', 'print_warning']

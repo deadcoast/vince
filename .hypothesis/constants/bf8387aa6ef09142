@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/.venv/bin/pytest
+# hypothesis_version: 6.148.8
+
+['-script.pyw', '.exe', '__main__']
