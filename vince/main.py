@@ -41,11 +41,13 @@ from vince.commands.slap import cmd_slap
 from vince.commands.chop import cmd_chop
 from vince.commands.set_cmd import cmd_set
 from vince.commands.forget import cmd_forget
+from vince.commands.offer import cmd_offer
 
 app.command(name="slap")(cmd_slap)
 app.command(name="chop")(cmd_chop)
 app.command(name="set")(cmd_set)
 app.command(name="forget")(cmd_forget)
+app.command(name="offer")(cmd_offer)
 
 
 if __name__ == "__main__":

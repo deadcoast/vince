@@ -314,19 +314,19 @@ This implementation plan creates the vince CLI Python application following the 
     - Test error case (no default)
     - _Requirements: 11.3, 11.4_
 
-- [ ] 19. Implement offer command
-  - [ ] 19.1 Implement cmd_offer function
+- [x] 19. Implement offer command
+  - [x] 19.1 Implement cmd_offer function
     - Create vince/commands/offer.py
     - Add offer_id and path arguments
     - Add extension option and -vb flag
     - Implement command logic with offer_id validation
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7_
 
-  - [ ] 19.2 Register offer command
+  - [x] 19.2 Register offer command
     - Import and register in main.py
     - _Requirements: 12.1_
 
-  - [ ] 19.3 Write unit tests for offer command
+  - [x] 19.3 Write unit tests for offer command
     - Test successful offer creation
     - Test error cases (invalid offer_id, offer exists)
     - _Requirements: 12.5, 12.6, 12.7_
