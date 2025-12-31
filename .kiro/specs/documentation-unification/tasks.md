@@ -1,0 +1,293 @@
+# Implementation Plan: Documentation Unification
+
+## Overview
+
+This implementation plan provides a systematic approach to unifying the vince CLI documentation with the current source code. Tasks are organized into phases that build incrementally, with validation checkpoints to ensure quality.
+
+## Tasks
+
+- [ ] 1. Gap Analysis and Baseline
+  - [ ] 1.1 Run existing validation script and capture baseline errors
+    - Execute `python validate_docs.py --all --report`
+    - Document all current validation failures
+    - _Requirements: 2.1-2.8_
+  - [ ] 1.2 Extract source code definitions for comparison
+    - Extract error classes from `vince/errors.py`
+    - Extract states from `vince/state/default_state.py` and `vince/state/offer_state.py`
+    - Extract validation patterns from `vince/validation/`
+    - Extract config options from `vince/config.py`
+    - Extract supported extensions from `vince/validation/extension.py`
+    - _Requirements: 1.1-1.5_
+  - [ ] 1.3 Generate gap report comparing source to documentation
+    - Compare extracted errors against `docs/errors.md`
+    - Compare extracted states against `docs/states.md`
+    - Compare extracted patterns against `docs/overview.md`
+    - Compare extracted extensions against `docs/tables.md`
+    - _Requirements: 1.1-1.5, 3.2-3.5_
+
+- [ ] 2. Update tables.md (Single Source of Truth)
+  - [ ] 2.1 Update COMMANDS table
+    - Verify all 7 commands have id, sid, rid, description
+    - Ensure commands match `vince/commands/` implementations
+    - _Requirements: 8.1, 3.5_
+  - [ ] 2.2 Update FILE_TYPES table
+    - Verify all 12 extensions from SUPPORTED_EXTENSIONS are listed
+    - Ensure id, full_id, ext, sid, flag_short, flag_long columns are complete
+    - _Requirements: 8.2, 1.5_
+  - [ ] 2.3 Update ERRORS table
+    - Add all 15 error codes from `vince/errors.py`
+    - Ensure code, sid, category, message, severity columns are complete
+    - _Requirements: 8.3, 1.2, 3.4_
+  - [ ] 2.4 Update STATES table
+    - Add all 4 DefaultState values and 4 OfferState values
+    - Ensure id, sid, entity, description columns are complete
+    - _Requirements: 8.4, 6.1, 6.2_
+  - [ ] 2.5 Update CONFIG_OPTIONS table
+    - Verify all 7 config options from `vince/config.py`
+    - Ensure key, sid, type, default, description columns are complete
+    - _Requirements: 8.5, 1.4_
+  - [ ] 2.6 Verify no duplicate sid values across all tables
+    - Scan all tables for sid column
+    - Report and fix any duplicates
+    - _Requirements: 8.6_
+  - [ ] 2.7 Write property test for tables.md completeness
+    - **Property 8: Tables.md Completeness**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6**
+
+- [ ] 3. Checkpoint - Validate tables.md
+  - Run `python validate_docs.py --file tables.md`
+  - Ensure all table syntax validations pass
+  - Ensure all entry field completeness validations pass
+
+- [ ] 4. Update errors.md
+  - [ ] 4.1 Synchronize error catalog with source code
+    - Match all error codes to `vince/errors.py` classes
+    - Update message templates to match source
+    - Update recovery actions to match source
+    - _Requirements: 1.2, 3.4_
+  - [ ] 4.2 Ensure error categories match code ranges
+    - VE1xx = Input errors
+    - VE2xx = File errors
+    - VE3xx = State errors
+    - VE4xx = Config errors
+    - VE5xx = System errors
+    - _Requirements: 1.2_
+  - [ ] 4.3 Add cross-references section
+    - Link to tables.md ERRORS table
+    - Link to api.md for command exceptions
+    - Link to states.md for state errors
+    - _Requirements: 3.1, 10.2_
+  - [ ] 4.4 Write property test for error synchronization
+    - **Property 1: Source-Documentation Synchronization (errors)**
+    - **Validates: Requirements 1.2**
+
+- [ ] 5. Update states.md
+  - [ ] 5.1 Synchronize DefaultState documentation
+    - Match states to `DefaultState` enum values
+    - Match transitions to `VALID_TRANSITIONS` dict
+    - Update state diagram to match code
+    - _Requirements: 6.1, 6.3, 6.5_
+  - [ ] 5.2 Synchronize OfferState documentation
+    - Match states to `OfferState` enum values
+    - Match transitions to `VALID_TRANSITIONS` dict
+    - Update state diagram to match code
+    - _Requirements: 6.2, 6.3, 6.5_
+  - [ ] 5.3 Update invalid transitions section
+    - Document error codes for invalid transitions
+    - Match to `validate_transition` function behavior
+    - _Requirements: 6.4_
+  - [ ] 5.4 Add cross-references section
+    - Link to tables.md STATES table
+    - Link to errors.md for transition errors
+    - Link to schemas.md for state field
+    - _Requirements: 3.1, 10.2_
+  - [ ] 5.5 Write property test for state machine accuracy
+    - **Property 6: State Machine Documentation Accuracy**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.5**
+
+- [ ] 6. Checkpoint - Validate core state documentation
+  - Run `python validate_docs.py --file errors.md --file states.md`
+  - Ensure all validations pass
+
+- [ ] 7. Update schemas.md
+  - [ ] 7.1 Synchronize DefaultEntry schema
+    - Match fields to `DefaultsStore.add()` method
+    - Verify required vs optional fields
+    - Verify state enum values
+    - _Requirements: 5.1, 5.3, 5.5_
+  - [ ] 7.2 Synchronize OfferEntry schema
+    - Match fields to `OffersStore.add()` method
+    - Verify required vs optional fields
+    - Verify state enum values
+    - _Requirements: 5.2, 5.3, 5.5_
+  - [ ] 7.3 Verify timestamp format documentation
+    - Ensure ISO 8601 format is documented for all timestamp fields
+    - Match to `datetime.now(timezone.utc).isoformat()` usage
+    - _Requirements: 5.4_
+  - [ ] 7.4 Add cross-references section
+    - Link to states.md for state values
+    - Link to config.md for data_dir location
+    - _Requirements: 3.1, 10.2_
+  - [ ] 7.5 Write property test for schema accuracy
+    - **Property 5: Schema Documentation Accuracy**
+    - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
+
+- [ ] 8. Update api.md
+  - [ ] 8.1 Synchronize command function signatures
+    - Match parameters to actual Typer decorators in `vince/commands/`
+    - Verify parameter names, types, and defaults
+    - _Requirements: 4.1, 4.4_
+  - [ ] 8.2 Update extension flag documentation
+    - Ensure all 12 extensions from SUPPORTED_EXTENSIONS are listed
+    - Match flag syntax to actual Option definitions
+    - _Requirements: 4.2_
+  - [ ] 8.3 Update exception documentation per command
+    - Document which error codes each command can raise
+    - Match to actual exception handling in command implementations
+    - _Requirements: 4.3_
+  - [ ] 8.4 Add cross-references section
+    - Link to tables.md for command definitions
+    - Link to errors.md for exception details
+    - _Requirements: 3.1, 10.2_
+  - [ ] 8.5 Write property test for API completeness
+    - **Property 4: API Documentation Completeness**
+    - **Validates: Requirements 4.1, 4.2, 4.4**
+
+- [ ] 9. Checkpoint - Validate API and schema documentation
+  - Run `python validate_docs.py --file api.md --file schemas.md`
+  - Ensure all validations pass
+
+- [ ] 10. Update overview.md
+  - [ ] 10.1 Synchronize validation patterns
+    - Update EXTENSION_PATTERN regex to match source
+    - Update OFFER_ID_PATTERN regex to match source
+    - Update RESERVED_NAMES list to match source
+    - _Requirements: 9.1, 9.2, 9.3_
+  - [ ] 10.2 Update validation rules section
+    - Document path validation checks with error codes
+    - Document extension validation with error codes
+    - Document offer_id validation with error codes
+    - _Requirements: 9.4, 9.5_
+  - [ ] 10.3 Ensure Overview section exists
+    - Verify document starts with clear purpose statement
+    - _Requirements: 10.6_
+  - [ ] 10.4 Add/update cross-references section
+    - Link to all related documentation files
+    - _Requirements: 3.1, 10.2_
+  - [ ] 10.5 Write property test for validation pattern documentation
+    - **Property 9: Validation Pattern Documentation**
+    - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5**
+
+- [ ] 11. Update config.md
+  - [ ] 11.1 Synchronize config options
+    - Match options to `DEFAULT_CONFIG` in `vince/config.py`
+    - Verify types, defaults, and descriptions
+    - _Requirements: 1.4_
+  - [ ] 11.2 Verify config hierarchy documentation
+    - Document precedence: CLI flags > Project > User > Default
+    - Match to `get_config()` implementation
+    - _Requirements: 1.4_
+  - [ ] 11.3 Add cross-references section
+    - Link to tables.md CONFIG_OPTIONS table
+    - Link to schemas.md for config.json schema
+    - _Requirements: 3.1, 10.2_
+
+- [ ] 12. Update examples.md
+  - [ ] 12.1 Ensure examples exist for all commands
+    - Verify slap, chop, set, forget, offer, reject, list have examples
+    - _Requirements: 7.1_
+  - [ ] 12.2 Verify flag syntax in examples
+    - Check all flags use correct prefix (- for short, -- for long)
+    - Match to actual flag definitions in source
+    - _Requirements: 7.2_
+  - [ ] 12.3 Add examples for QOL flags
+    - Add examples showing -set, -forget, -slap, -chop, -offer, -reject usage
+    - _Requirements: 7.4_
+  - [ ] 12.4 Add examples for all extension types
+    - Ensure at least one example per supported extension
+    - _Requirements: 7.5_
+  - [ ] 12.5 Add cross-references section
+    - Link to api.md for command details
+    - Link to tables.md for flag definitions
+    - _Requirements: 3.1, 10.2_
+  - [ ] 12.6 Write property test for example coverage
+    - **Property 7: Example Coverage**
+    - **Validates: Requirements 7.1, 7.2, 7.4, 7.5**
+
+- [ ] 13. Update testing.md
+  - [ ] 13.1 Synchronize test fixtures with actual tests
+    - Match fixtures to `tests/conftest.py` if exists
+    - Update mock patterns to match actual usage
+    - _Requirements: 1.1_
+  - [ ] 13.2 Update generator strategies
+    - Match Hypothesis strategies to actual test implementations
+    - _Requirements: 1.1_
+  - [ ] 13.3 Add cross-references section
+    - Link to api.md for command interfaces
+    - Link to schemas.md for data structures
+    - _Requirements: 3.1, 10.2_
+
+- [ ] 14. Update README.md
+  - [ ] 14.1 Verify all documentation links are valid
+    - Check all relative paths resolve correctly
+    - _Requirements: 3.1_
+  - [ ] 14.2 Ensure Overview section exists
+    - Verify document has clear purpose statement
+    - _Requirements: 10.6_
+
+- [ ] 15. Checkpoint - Full validation
+  - Run `python validate_docs.py --all`
+  - Ensure zero errors across all documents
+
+- [ ] 16. Cross-Reference Validation
+  - [ ] 16.1 Validate all document links
+    - Check all markdown links resolve to existing files
+    - _Requirements: 3.1_
+  - [ ] 16.2 Validate all identifier references
+    - Check all referenced identifiers exist in tables.md
+    - _Requirements: 3.2, 3.3_
+  - [ ] 16.3 Validate error code references
+    - Check all VE### codes match ERRORS table
+    - _Requirements: 3.4_
+  - [ ] 16.4 Validate command references
+    - Check all command names match COMMANDS table
+    - _Requirements: 3.5_
+  - [ ] 16.5 Write property test for cross-reference integrity
+    - **Property 3: Cross-Reference Integrity**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+
+- [ ] 17. Document Structure Validation
+  - [ ] 17.1 Verify all documents have Overview sections
+    - Check each doc file starts with purpose statement
+    - _Requirements: 10.6_
+  - [ ] 17.2 Verify all documents have Cross-References sections
+    - Check each doc file ends with related links
+    - _Requirements: 10.2_
+  - [ ] 17.3 Write property test for document structure
+    - **Property 10: Document Structure Consistency**
+    - **Validates: Requirements 10.2, 10.6**
+
+- [ ] 18. Final Validation and Property Tests
+  - [ ] 18.1 Run complete validation script
+    - Execute `python validate_docs.py --all --report`
+    - Verify zero errors
+    - _Requirements: 2.1-2.8_
+  - [ ] 18.2 Write property test for validation compliance
+    - **Property 2: Validation Script Compliance**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8**
+  - [ ] 18.3 Write property test for source-doc synchronization
+    - **Property 1: Source-Documentation Synchronization**
+    - **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
+
+- [ ] 19. Final Checkpoint
+  - Run all property tests
+  - Run full validation script
+  - Ensure all tests pass, ask the user if questions arise
+
+## Notes
+
+- All tasks are required for comprehensive documentation unification
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties
+- The existing `validate_docs.py` script provides the validation framework
