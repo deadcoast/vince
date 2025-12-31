@@ -22,19 +22,34 @@ The vince CLI testing strategy employs a dual approach combining unit tests and 
 ```text
 tests/
 ├── __init__.py
-├── conftest.py              # Shared fixtures
-├── test_commands.py         # Command unit tests
-├── test_validators.py       # Validation property tests
-├── test_persistence.py      # File I/O tests
-├── test_integration.py      # End-to-end tests
-└── generators/
-    └── __init__.py          # Hypothesis strategies
+├── test_chop_command.py         # Chop command tests
+├── test_config.py               # Configuration tests
+├── test_cross_references.py     # Cross-reference validation tests
+├── test_doc_code_sync.py        # Documentation-code sync tests
+├── test_errors.py               # Error handling tests
+├── test_forget_command.py       # Forget command tests
+├── test_import_usage.py         # Import usage tests
+├── test_integration.py          # End-to-end integration tests
+├── test_list_command.py         # List command tests
+├── test_offer_command.py        # Offer command tests
+├── test_pattern_usage.py        # Pattern usage tests
+├── test_persistence.py          # Persistence layer tests
+├── test_reject_command.py       # Reject command tests
+├── test_schema_accuracy.py      # Schema accuracy tests
+├── test_set_command.py          # Set command tests
+├── test_slap_command.py         # Slap command tests
+├── test_state_doc_accuracy.py   # State documentation accuracy tests
+├── test_state_machines.py       # State machine tests
+├── test_tables_completeness.py  # Tables completeness tests
+├── test_validation_coverage.py  # Validation coverage tests
+├── test_validation_pattern_docs.py  # Validation pattern docs tests
+├── test_validators.py           # Documentation validator tests
+└── test_vince_validators.py     # Vince CLI validator tests
 ```
-
 
 ## Fixtures
 
-Test fixtures provide reusable setup and teardown logic for consistent test environments.
+Test fixtures provide reusable setup and teardown logic for consistent test environments. Fixtures are defined inline in each test file rather than in a shared `conftest.py`.
 
 ### CLI Test Fixture
 
@@ -43,364 +58,154 @@ The CLI test fixture provides an isolated environment for testing Typer commands
 ```python
 import pytest
 from typer.testing import CliRunner
-from pathlib import Path
-import tempfile
-import shutil
 
 @pytest.fixture
-def cli_runner():
+def runner():
     """Provide a Typer CLI test runner."""
     return CliRunner()
-
-@pytest.fixture
-def app():
-    """Provide the vince Typer application instance."""
-    from vince.main import app
-    return app
-
-@pytest.fixture
-def isolated_cli(cli_runner, app, tmp_path):
-    """Provide CLI runner with isolated data directory."""
-    data_dir = tmp_path / ".vince"
-    data_dir.mkdir()
-    
-    # Initialize empty data files
-    (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
-    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
-    (data_dir / "config.json").write_text('{"version": "1.0.0"}')
-    
-    class IsolatedCLI:
-        def __init__(self):
-            self.runner = cli_runner
-            self.app = app
-            self.data_dir = data_dir
-        
-        def invoke(self, *args, **kwargs):
-            return self.runner.invoke(self.app, *args, env={"VINCE_DATA_DIR": str(data_dir)}, **kwargs)
-    
-    return IsolatedCLI()
 ```
 
-### Data File Fixtures
+### Mock Executable Fixture
 
-Fixtures for creating and managing test data files:
+Creates a mock executable file for testing path validation:
 
 ```python
-import pytest
-import json
-from datetime import datetime
-
-@pytest.fixture
-def sample_defaults():
-    """Provide sample defaults data."""
-    return {
-        "version": "1.0.0",
-        "defaults": [
-            {
-                "id": "def-md-vscode-001",
-                "extension": ".md",
-                "application_path": "/usr/bin/code",
-                "application_name": "Visual Studio Code",
-                "state": "active",
-                "created_at": "2024-01-15T10:30:00Z"
-            }
-        ]
-    }
-
-@pytest.fixture
-def sample_offers():
-    """Provide sample offers data."""
-    return {
-        "version": "1.0.0",
-        "offers": [
-            {
-                "offer_id": "code-md",
-                "default_id": "def-md-vscode-001",
-                "state": "active",
-                "auto_created": True,
-                "created_at": "2024-01-15T10:30:00Z"
-            }
-        ]
-    }
-
-@pytest.fixture
-def populated_data_dir(tmp_path, sample_defaults, sample_offers):
-    """Provide a data directory with pre-populated test data."""
-    data_dir = tmp_path / ".vince"
-    data_dir.mkdir()
-    
-    (data_dir / "defaults.json").write_text(json.dumps(sample_defaults, indent=2))
-    (data_dir / "offers.json").write_text(json.dumps(sample_offers, indent=2))
-    (data_dir / "config.json").write_text('{"version": "1.0.0"}')
-    
-    return data_dir
-
 @pytest.fixture
 def mock_executable(tmp_path):
     """Create a mock executable file for testing."""
-    exe_path = tmp_path / "mock_app"
-    exe_path.write_text("#!/bin/bash\necho 'mock'")
-    exe_path.chmod(0o755)
-    return exe_path
+    exe = tmp_path / "mock_app"
+    exe.write_text("#!/bin/bash\necho 'mock'")
+    exe.chmod(0o755)
+    return exe
 ```
 
-### Temporary Directory Fixture
+### Non-Executable File Fixture
+
+Creates a non-executable file for testing permission errors:
 
 ```python
 @pytest.fixture
-def clean_data_dir(tmp_path):
-    """Provide a clean temporary data directory."""
+def non_executable_file(tmp_path):
+    """Create a non-executable file for testing."""
+    file = tmp_path / "test_file.txt"
+    file.write_text("test content")
+    file.chmod(0o644)
+    return file
+```
+
+### Isolated Data Directory Fixture
+
+Provides an isolated data directory with empty data files:
+
+```python
+@pytest.fixture
+def isolated_data_dir(tmp_path):
+    """Provide isolated data directory with empty data files."""
     data_dir = tmp_path / ".vince"
     data_dir.mkdir()
-    (data_dir / "backups").mkdir()
+    (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
     return data_dir
 ```
 
+### Unique Data Directory Pattern
+
+For property-based tests that run many iterations, use unique directories:
+
+```python
+import uuid
+import tempfile
+
+with tempfile.TemporaryDirectory() as tmp_dir:
+    unique_id = str(uuid.uuid4())
+    data_dir = Path(tmp_dir) / f".vince_{unique_id}"
+    data_dir.mkdir(exist_ok=True)
+    # ... test code
+```
 
 ## Mocks
 
 Mock patterns for isolating tests from external dependencies.
-
-### File System Mocking
-
-Mock file system operations to test without actual file I/O:
-
-```python
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
-
-@pytest.fixture
-def mock_filesystem():
-    """Mock file system operations."""
-    with patch('pathlib.Path.exists') as mock_exists, \
-         patch('pathlib.Path.is_file') as mock_is_file, \
-         patch('pathlib.Path.read_text') as mock_read, \
-         patch('pathlib.Path.write_text') as mock_write:
-        
-        mock_exists.return_value = True
-        mock_is_file.return_value = True
-        
-        yield {
-            'exists': mock_exists,
-            'is_file': mock_is_file,
-            'read_text': mock_read,
-            'write_text': mock_write
-        }
-
-def test_file_not_found_error(mock_filesystem):
-    """Test error handling when file does not exist."""
-    mock_filesystem['exists'].return_value = False
-    
-    # Test code that should raise VE201
-    ...
-```
-
-### Atomic Write Mocking
-
-Mock atomic write operations for testing persistence:
-
-```python
-@pytest.fixture
-def mock_atomic_write():
-    """Mock atomic write operations."""
-    written_data = {}
-    
-    def capture_write(path, data):
-        written_data[str(path)] = data
-    
-    with patch('vince.persistence.atomic_write', side_effect=capture_write):
-        yield written_data
-
-def test_data_persistence(mock_atomic_write):
-    """Test that data is written correctly."""
-    # Perform operation that writes data
-    ...
-    
-    # Verify written data
-    assert "defaults.json" in str(list(mock_atomic_write.keys())[0])
-```
 
 ### Config Mocking
 
 Mock configuration loading for testing different config scenarios:
 
 ```python
-@pytest.fixture
-def mock_config():
-    """Mock configuration with customizable values."""
-    default_config = {
-        "version": "1.0.0",
-        "data_dir": "~/.vince",
-        "verbose": False,
-        "color_theme": "default",
-        "backup_enabled": True,
-        "max_backups": 5,
-        "confirm_destructive": True
-    }
-    
-    class ConfigMock:
-        def __init__(self):
-            self.config = default_config.copy()
-        
-        def set(self, key, value):
-            self.config[key] = value
-        
-        def get(self, key, default=None):
-            return self.config.get(key, default)
-    
-    return ConfigMock()
+def create_mock_config(data_dir):
+    """Create a mock config function for testing."""
+    def mock_get_config(*args, **kwargs):
+        return {
+            "version": "1.0.0",
+            "data_dir": str(data_dir),
+            "verbose": False,
+            "backup_enabled": False,
+            "max_backups": 5,
+        }
+    return mock_get_config
 
-@pytest.fixture
-def verbose_config(mock_config):
-    """Config with verbose mode enabled."""
-    mock_config.set("verbose", True)
-    return mock_config
-
-@pytest.fixture
-def no_backup_config(mock_config):
-    """Config with backups disabled."""
-    mock_config.set("backup_enabled", False)
-    return mock_config
+def create_mock_data_dir(data_dir):
+    """Create a mock data dir function for testing."""
+    def mock_get_data_dir(config=None):
+        return data_dir
+    return mock_get_data_dir
 ```
 
-### Console Output Mocking
+### Monkeypatch Pattern for Commands
 
-Mock Rich console output for testing CLI messages:
+Use monkeypatch to inject mock config into commands:
 
 ```python
-from io import StringIO
-from rich.console import Console
+def test_command_with_mock_config(runner, mock_executable, isolated_data_dir, monkeypatch):
+    mock_config = create_mock_config(isolated_data_dir)
+    mock_data_dir = create_mock_data_dir(isolated_data_dir)
 
-@pytest.fixture
-def capture_console():
-    """Capture Rich console output."""
-    output = StringIO()
-    console = Console(file=output, force_terminal=True)
-    
-    class ConsoleCapturer:
-        def __init__(self):
-            self.console = console
-            self.output = output
-        
-        def get_output(self):
-            return self.output.getvalue()
-        
-        def contains(self, text):
-            return text in self.get_output()
-    
-    return ConsoleCapturer()
+    monkeypatch.setattr("vince.commands.slap.get_config", mock_config)
+    monkeypatch.setattr("vince.commands.slap.get_data_dir", mock_data_dir)
+
+    result = runner.invoke(app, ["slap", str(mock_executable), "--md"])
+    assert result.exit_code == 0
 ```
 
+### Multi-Command Monkeypatch
+
+For integration tests involving multiple commands:
+
+```python
+def test_multi_command_flow(runner, mock_executable, isolated_data_dir, monkeypatch):
+    mock_config = create_mock_config(isolated_data_dir)
+    mock_data_dir = create_mock_data_dir(isolated_data_dir)
+
+    # Patch all commands used in the test
+    for cmd in ["slap", "offer", "reject", "chop", "list_cmd"]:
+        monkeypatch.setattr(f"vince.commands.{cmd}.get_config", mock_config)
+        monkeypatch.setattr(f"vince.commands.{cmd}.get_data_dir", mock_data_dir)
+
+    # ... test code
+```
 
 ## Generators
 
 Hypothesis strategies for generating test data in property-based tests.
-
-### Path Strategies
-
-Generate valid and invalid file paths for testing:
-
-```python
-from hypothesis import strategies as st
-from pathlib import Path
-import string
-
-# Valid path characters (excluding problematic ones)
-PATH_CHARS = string.ascii_letters + string.digits + "_-."
-
-@st.composite
-def valid_paths(draw):
-    """Generate valid file paths."""
-    # Generate path components
-    num_parts = draw(st.integers(min_value=1, max_value=4))
-    parts = []
-    
-    for _ in range(num_parts):
-        part = draw(st.text(
-            alphabet=PATH_CHARS,
-            min_size=1,
-            max_size=20
-        ))
-        if part:  # Ensure non-empty
-            parts.append(part)
-    
-    if not parts:
-        parts = ["default"]
-    
-    # Build path
-    path_str = "/tmp/" + "/".join(parts)
-    return Path(path_str)
-
-@st.composite
-def executable_paths(draw):
-    """Generate paths that look like executables."""
-    base_dirs = ["/usr/bin", "/usr/local/bin", "/opt", "/Applications"]
-    base = draw(st.sampled_from(base_dirs))
-    
-    name = draw(st.text(
-        alphabet=string.ascii_lowercase + string.digits + "-_",
-        min_size=1,
-        max_size=20
-    ))
-    
-    return Path(base) / (name or "app")
-
-@st.composite
-def invalid_paths(draw):
-    """Generate invalid file paths (with illegal characters)."""
-    # Include characters that are invalid in paths
-    invalid_chars = '\x00\n\r'
-    name = draw(st.text(min_size=1, max_size=10))
-    invalid_char = draw(st.sampled_from(list(invalid_chars)))
-    
-    return f"/tmp/{name}{invalid_char}file"
-```
 
 ### Extension Strategies
 
 Generate valid and invalid file extensions:
 
 ```python
-# Supported extensions from the vince CLI
-SUPPORTED_EXTENSIONS = [
-    ".md", ".py", ".txt", ".js", ".html", ".css",
-    ".json", ".yml", ".yaml", ".xml", ".csv", ".sql"
-]
+from hypothesis import strategies as st
+from vince.validation.extension import SUPPORTED_EXTENSIONS
 
 @st.composite
 def valid_extensions(draw):
-    """Generate valid file extensions."""
-    return draw(st.sampled_from(SUPPORTED_EXTENSIONS))
+    """Generate valid file extensions from the supported set."""
+    return draw(st.sampled_from(list(SUPPORTED_EXTENSIONS)))
 
 @st.composite
-def extension_flags(draw):
-    """Generate extension flags as used in CLI (--md, --py, etc.)."""
-    ext = draw(st.sampled_from(SUPPORTED_EXTENSIONS))
-    return f"--{ext[1:]}"  # Remove dot, add dashes
-
-@st.composite
-def invalid_extensions(draw):
-    """Generate invalid file extensions."""
-    strategies = [
-        st.just("md"),           # Missing dot
-        st.just("..md"),         # Double dot
-        st.just(".MD"),          # Uppercase
-        st.just(".m d"),         # Space in extension
-        st.just(".123"),         # Starts with number
-        st.text(min_size=1, max_size=5).map(lambda x: f".{x.upper()}")  # Random uppercase
-    ]
-    return draw(st.one_of(*strategies))
-
-@st.composite
-def any_extension(draw):
-    """Generate any extension matching the pattern ^\\.[a-z0-9]+$."""
-    chars = draw(st.text(
-        alphabet=string.ascii_lowercase + string.digits,
-        min_size=1,
-        max_size=10
-    ))
-    return f".{chars}" if chars else ".txt"
+def unsupported_extensions(draw):
+    """Generate extensions that match pattern but are not supported."""
+    unsupported = [".exe", ".dll", ".so", ".bin", ".dat", ".log", ".tmp", ".bak"]
+    return draw(st.sampled_from(unsupported))
 ```
 
 ### Offer ID Strategies
@@ -408,242 +213,228 @@ def any_extension(draw):
 Generate valid and invalid offer identifiers:
 
 ```python
-# Reserved offer names that cannot be used
-RESERVED_OFFER_NAMES = ["help", "version", "list", "all", "none", "default"]
+import string
+from vince.validation.offer_id import RESERVED_NAMES
 
 @st.composite
 def valid_offer_ids(draw):
-    """Generate valid offer IDs matching pattern ^[a-z][a-z0-9_-]{0,31}$."""
-    # First character must be lowercase letter
-    first_char = draw(st.sampled_from(string.ascii_lowercase))
-    
-    # Remaining characters: lowercase, digits, underscore, hyphen
-    remaining_chars = string.ascii_lowercase + string.digits + "_-"
+    """Generate valid offer IDs matching the pattern ^[a-z][a-z0-9_-]{0,31}$."""
+    first = draw(st.sampled_from(string.ascii_lowercase))
     rest_length = draw(st.integers(min_value=0, max_value=31))
-    rest = draw(st.text(alphabet=remaining_chars, min_size=rest_length, max_size=rest_length))
-    
-    offer_id = first_char + rest
-    
-    # Ensure not reserved
-    if offer_id in RESERVED_OFFER_NAMES:
+    rest = draw(st.text(
+        alphabet=string.ascii_lowercase + string.digits + "_-",
+        min_size=rest_length,
+        max_size=rest_length,
+    ))
+    offer_id = first + rest
+
+    # Ensure not a reserved name
+    if offer_id in RESERVED_NAMES:
         offer_id = f"custom-{offer_id}"
-    
+
     return offer_id
 
 @st.composite
-def invalid_offer_ids(draw):
-    """Generate invalid offer IDs."""
+def invalid_pattern_offer_ids(draw):
+    """Generate offer IDs that don't match the required pattern."""
     strategies = [
-        # Starts with number
-        st.text(alphabet=string.digits, min_size=1, max_size=1).map(lambda x: x + "offer"),
-        # Starts with uppercase
-        st.text(alphabet=string.ascii_uppercase, min_size=1, max_size=1).map(lambda x: x + "offer"),
-        # Contains invalid characters
-        st.just("offer@name"),
-        st.just("offer name"),
-        st.just("offer.name"),
-        # Too long (> 32 chars)
-        st.just("a" * 33),
-        # Empty
-        st.just(""),
-        # Reserved names
-        st.sampled_from(RESERVED_OFFER_NAMES)
+        st.just("1abc"),      # Starts with number
+        st.just("Abc"),       # Starts with uppercase
+        st.just("_abc"),      # Starts with underscore
+        st.just("-abc"),      # Starts with hyphen
+        st.just(""),          # Empty string
+        st.just("a" * 33),    # Too long (33 chars)
+        st.just("abc def"),   # Contains space
+        st.just("abc.def"),   # Contains dot
     ]
     return draw(st.one_of(*strategies))
-
-@st.composite
-def offer_entries(draw):
-    """Generate complete offer entry objects."""
-    from datetime import datetime, timezone
-    
-    offer_id = draw(valid_offer_ids())
-    default_id = f"def-{draw(valid_extensions())[1:]}-{draw(st.integers(min_value=1, max_value=999)):03d}"
-    state = draw(st.sampled_from(["created", "active", "rejected"]))
-    auto_created = draw(st.booleans())
-    created_at = datetime.now(timezone.utc).isoformat()
-    
-    return {
-        "offer_id": offer_id,
-        "default_id": default_id,
-        "state": state,
-        "auto_created": auto_created,
-        "created_at": created_at
-    }
 ```
 
-### Default Entry Strategies
+### Application Path Strategies
+
+Generate valid-looking application paths:
 
 ```python
 @st.composite
-def default_entries(draw):
-    """Generate complete default entry objects."""
-    from datetime import datetime, timezone
-    
-    ext = draw(valid_extensions())
-    path = draw(executable_paths())
-    state = draw(st.sampled_from(["pending", "active", "removed"]))
-    created_at = datetime.now(timezone.utc).isoformat()
-    
-    entry_id = f"def-{ext[1:]}-app-{draw(st.integers(min_value=1, max_value=999)):03d}"
-    
-    return {
-        "id": entry_id,
-        "extension": ext,
-        "application_path": str(path),
-        "state": state,
-        "created_at": created_at
-    }
+def valid_application_paths(draw):
+    """Generate valid-looking application paths."""
+    app_name = draw(st.text(
+        alphabet=string.ascii_lowercase + string.digits + "_-",
+        min_size=1,
+        max_size=20,
+    ))
+    return f"/usr/bin/{app_name}"
 ```
 
+### State Strategies
+
+Generate valid states for defaults and offers:
+
+```python
+@st.composite
+def valid_states(draw):
+    """Generate valid default states."""
+    return draw(st.sampled_from(["pending", "active"]))
+
+@st.composite
+def valid_default_ids(draw):
+    """Generate valid default IDs."""
+    ext = draw(st.sampled_from(["md", "py", "txt", "js", "html", "css", "json"]))
+    num = draw(st.integers(min_value=0, max_value=999))
+    return f"def-{ext}-{num:03d}"
+```
+
+### State Transition Strategies
+
+Generate valid and invalid state transitions:
+
+```python
+from vince.state.default_state import VALID_TRANSITIONS, DefaultState
+
+@st.composite
+def valid_default_transitions(draw):
+    """Generate valid (current_state, target_state) pairs from VALID_TRANSITIONS."""
+    valid_pairs = []
+    for from_state, to_states in VALID_TRANSITIONS.items():
+        for to_state in to_states:
+            valid_pairs.append((from_state, to_state))
+    return draw(st.sampled_from(valid_pairs))
+
+@st.composite
+def invalid_default_transitions(draw):
+    """Generate invalid (current_state, target_state) pairs not in VALID_TRANSITIONS."""
+    all_states = list(DefaultState)
+    invalid_pairs = []
+    for from_state in all_states:
+        valid_targets = VALID_TRANSITIONS.get(from_state, set())
+        for to_state in all_states:
+            if to_state not in valid_targets:
+                invalid_pairs.append((from_state, to_state))
+    return draw(st.sampled_from(invalid_pairs))
+```
+
+### Markdown Content Strategies
+
+Generate markdown content for documentation validation tests:
+
+```python
+@st.composite
+def valid_heading_content(draw):
+    """Generate markdown content with valid heading hierarchy."""
+    h1_text = draw(st.text(
+        min_size=1, max_size=50,
+        alphabet=st.characters(
+            whitelist_categories=("L", "N", "P", "S"),
+            blacklist_characters="\n#"
+        ),
+    ))
+    h2_texts = draw(st.lists(
+        st.text(min_size=1, max_size=30,
+            alphabet=st.characters(
+                whitelist_categories=("L", "N"),
+                blacklist_characters="\n#"
+            )),
+        min_size=1, max_size=3,
+    ))
+
+    lines = [f"# {h1_text.strip() or 'Title'}"]
+    for h2 in h2_texts:
+        h2_clean = h2.strip() or "Section"
+        lines.append(f"\n## {h2_clean}")
+        lines.append("\nSome content here.")
+
+    return "\n".join(lines)
+
+@st.composite
+def valid_table_content(draw):
+    """Generate markdown content with valid table syntax."""
+    num_cols = draw(st.integers(min_value=2, max_value=5))
+    num_rows = draw(st.integers(min_value=1, max_value=5))
+
+    headers = [f"col{i}" for i in range(num_cols)]
+    header_row = "| " + " | ".join(headers) + " |"
+    separator = "| " + " | ".join(["---"] * num_cols) + " |"
+
+    data_rows = []
+    for _ in range(num_rows):
+        cells = [f"val{i}" for i in range(num_cols)]
+        data_rows.append("| " + " | ".join(cells) + " |")
+
+    return f"# Table Doc\n\n## Section\n\n{header_row}\n{separator}\n" + "\n".join(data_rows)
+```
 
 ## Integration
 
 End-to-end integration test patterns for testing complete command flows.
 
-### End-to-End Test Setup
+### Integration Test Base Pattern
 
 ```python
 import pytest
-from typer.testing import CliRunner
-from pathlib import Path
 import json
-import os
+from typer.testing import CliRunner
+from vince.main import app
 
-class IntegrationTestBase:
-    """Base class for integration tests with common setup."""
-    
-    @pytest.fixture(autouse=True)
-    def setup_integration(self, tmp_path):
-        """Set up isolated environment for each test."""
-        self.data_dir = tmp_path / ".vince"
-        self.data_dir.mkdir()
-        (self.data_dir / "backups").mkdir()
-        
-        # Initialize empty data files
-        self._init_data_files()
-        
-        # Create mock executable
-        self.mock_app = tmp_path / "mock_app"
-        self.mock_app.write_text("#!/bin/bash\necho 'mock'")
-        self.mock_app.chmod(0o755)
-        
-        # Set environment
-        self.env = {"VINCE_DATA_DIR": str(self.data_dir)}
-        
-        # CLI runner
-        self.runner = CliRunner()
-        
-        yield
-        
-        # Cleanup is automatic with tmp_path
-    
-    def _init_data_files(self):
-        """Initialize empty data files."""
-        (self.data_dir / "defaults.json").write_text(
-            '{"version": "1.0.0", "defaults": []}'
-        )
-        (self.data_dir / "offers.json").write_text(
-            '{"version": "1.0.0", "offers": []}'
-        )
-        (self.data_dir / "config.json").write_text(
-            '{"version": "1.0.0"}'
-        )
-    
-    def invoke(self, *args):
-        """Invoke CLI command with isolated environment."""
-        from vince.main import app
-        return self.runner.invoke(app, args, env=self.env)
-    
-    def read_defaults(self):
-        """Read current defaults data."""
-        return json.loads((self.data_dir / "defaults.json").read_text())
-    
-    def read_offers(self):
-        """Read current offers data."""
-        return json.loads((self.data_dir / "offers.json").read_text())
-```
+class TestSlapListChopFlow:
+    """Integration tests for slap → list → chop flow."""
 
-### Complete Flow Test Example
+    def test_slap_list_chop_complete_flow(
+        self, runner, mock_executable, isolated_data_dir, monkeypatch
+    ):
+        """Test complete flow: slap creates default, list shows it, chop removes it."""
+        mock_config = create_mock_config(isolated_data_dir)
+        mock_data_dir = create_mock_data_dir(isolated_data_dir)
 
-```python
-class TestSlapChopFlow(IntegrationTestBase):
-    """Test complete slap -> chop workflow."""
-    
-    def test_slap_creates_default_and_chop_removes(self):
-        """Test that slap creates a default and chop removes it."""
-        # Step 1: Slap to create default
-        result = self.invoke("slap", str(self.mock_app), "-set", "--md")
+        # Patch all commands
+        monkeypatch.setattr("vince.commands.slap.get_config", mock_config)
+        monkeypatch.setattr("vince.commands.slap.get_data_dir", mock_data_dir)
+        monkeypatch.setattr("vince.commands.list_cmd.get_config", mock_config)
+        monkeypatch.setattr("vince.commands.list_cmd.get_data_dir", mock_data_dir)
+        monkeypatch.setattr("vince.commands.chop.get_config", mock_config)
+        monkeypatch.setattr("vince.commands.chop.get_data_dir", mock_data_dir)
+
+        # Step 1: slap creates a pending default
+        result = runner.invoke(app, ["slap", str(mock_executable), "--md"])
         assert result.exit_code == 0
-        
+
         # Verify default was created
-        defaults = self.read_defaults()
-        assert len(defaults["defaults"]) == 1
-        assert defaults["defaults"][0]["extension"] == ".md"
-        assert defaults["defaults"][0]["state"] == "active"
-        
-        # Step 2: Chop to remove default
-        result = self.invoke("chop", "--md", "-forget")
+        defaults_data = json.loads((isolated_data_dir / "defaults.json").read_text())
+        assert len(defaults_data["defaults"]) == 1
+        assert defaults_data["defaults"][0]["state"] == "pending"
+
+        # Step 2: list -def shows the default
+        result = runner.invoke(app, ["list", "-def"])
         assert result.exit_code == 0
-        
-        # Verify default was removed
-        defaults = self.read_defaults()
-        removed = [d for d in defaults["defaults"] if d["state"] == "removed"]
-        assert len(removed) == 1
-```
+        assert ".md" in result.output
 
-### Cleanup Procedures
+        # Step 3: chop -forget removes the default
+        result = runner.invoke(app, ["chop", "--md", "-forget"])
+        assert result.exit_code == 0
 
-```python
-@pytest.fixture
-def cleanup_after_test(tmp_path):
-    """Ensure cleanup after test completion."""
-    yield tmp_path
-    
-    # Force cleanup of any remaining files
-    import shutil
-    if tmp_path.exists():
-        shutil.rmtree(tmp_path, ignore_errors=True)
-
-def cleanup_data_files(data_dir: Path):
-    """Reset data files to initial state."""
-    (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
-    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
-
-def cleanup_backups(data_dir: Path):
-    """Remove all backup files."""
-    backup_dir = data_dir / "backups"
-    if backup_dir.exists():
-        for backup_file in backup_dir.glob("*.bak"):
-            backup_file.unlink()
+        # Verify default state changed to removed
+        defaults_data = json.loads((isolated_data_dir / "defaults.json").read_text())
+        assert defaults_data["defaults"][0]["state"] == "removed"
 ```
 
 ### State Verification Helpers
 
 ```python
-def assert_default_exists(data_dir: Path, extension: str, state: str = None):
+def assert_default_exists(data_dir, extension, state=None):
     """Assert that a default exists for the given extension."""
     defaults = json.loads((data_dir / "defaults.json").read_text())
     matching = [d for d in defaults["defaults"] if d["extension"] == extension]
     assert len(matching) > 0, f"No default found for {extension}"
     if state:
-        assert matching[0]["state"] == state, f"Expected state {state}, got {matching[0]['state']}"
+        assert matching[0]["state"] == state
 
-def assert_offer_exists(data_dir: Path, offer_id: str, state: str = None):
+def assert_offer_exists(data_dir, offer_id, state=None):
     """Assert that an offer exists with the given ID."""
     offers = json.loads((data_dir / "offers.json").read_text())
     matching = [o for o in offers["offers"] if o["offer_id"] == offer_id]
     assert len(matching) > 0, f"No offer found with id {offer_id}"
     if state:
-        assert matching[0]["state"] == state, f"Expected state {state}, got {matching[0]['state']}"
-
-def assert_no_default(data_dir: Path, extension: str):
-    """Assert that no active default exists for the given extension."""
-    defaults = json.loads((data_dir / "defaults.json").read_text())
-    active = [d for d in defaults["defaults"] 
-              if d["extension"] == extension and d["state"] == "active"]
-    assert len(active) == 0, f"Active default found for {extension}"
+        assert matching[0]["state"] == state
 ```
-
 
 ## Coverage
 
@@ -677,7 +468,7 @@ The following paths must have 100% test coverage:
 ### Coverage Configuration
 
 ```ini
-# pytest.ini or pyproject.toml
+# pyproject.toml
 [tool.coverage.run]
 source = ["vince"]
 branch = true
@@ -722,352 +513,194 @@ Property-based tests should cover:
 | State transitions | 100 | All valid + invalid transitions |
 | Round-trip persistence | 100 | Serialize → deserialize |
 
-
 ## Examples
 
 Example test cases for each vince CLI command.
 
-### slap Command Tests
+### Path Validation Tests
 
 ```python
-import pytest
-from typer.testing import CliRunner
-from hypothesis import given, settings
-from hypothesis import strategies as st
+class TestPathValidation:
+    """Property-based tests for path validation."""
 
-class TestSlapCommand:
-    """Test cases for the slap command."""
-    
-    @pytest.fixture
-    def runner(self):
-        return CliRunner()
-    
-    def test_slap_with_valid_path_and_extension(self, runner, mock_executable, isolated_data_dir):
-        """Test slap with valid arguments creates a default."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["slap", str(mock_executable), "--md"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        assert "default" in result.output.lower() or "set" in result.output.lower()
-    
-    def test_slap_with_set_flag_activates_default(self, runner, mock_executable, isolated_data_dir):
-        """Test slap -set creates an active default."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["slap", str(mock_executable), "-set", "--md"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        
-        # Verify state is active
-        import json
-        defaults = json.loads((isolated_data_dir / "defaults.json").read_text())
-        active = [d for d in defaults["defaults"] if d["state"] == "active"]
-        assert len(active) == 1
-    
-    def test_slap_with_nonexistent_path_fails(self, runner, isolated_data_dir):
-        """Test slap with nonexistent path returns VE101."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["slap", "/nonexistent/path", "--md"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-        assert "VE101" in result.output or "does not exist" in result.output.lower()
-    
-    def test_slap_verbose_output(self, runner, mock_executable, isolated_data_dir):
-        """Test slap -vb provides verbose output."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["slap", str(mock_executable), "--md", "-vb"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        # Verbose output should contain more details
-        assert len(result.output) > 0
+    @given(st.text(
+        min_size=1, max_size=50,
+        alphabet=string.ascii_letters + string.digits + "_-",
+    ))
+    @settings(max_examples=100)
+    def test_nonexistent_paths_raise_invalid_path_error(self, filename):
+        """Property: Non-existent paths should raise InvalidPathError (VE101)."""
+        nonexistent = Path(f"/nonexistent_dir_xyz/{filename}")
+
+        with pytest.raises(InvalidPathError) as exc_info:
+            validate_path(nonexistent)
+
+        assert exc_info.value.code == "VE101"
+
+    def test_valid_executable_returns_resolved_path(self, executable_file):
+        """Property: Valid executable paths should return the resolved path."""
+        result = validate_path(executable_file)
+
+        assert result == executable_file.resolve()
+        assert result.exists()
+        assert result.is_file()
+        assert os.access(result, os.X_OK)
 ```
 
-### chop Command Tests
+### Extension Validation Tests
 
 ```python
-class TestChopCommand:
-    """Test cases for the chop command."""
-    
-    def test_chop_removes_existing_default(self, runner, populated_data_dir):
-        """Test chop removes an existing default."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["chop", "--md", "-forget"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_chop_nonexistent_extension_fails(self, runner, isolated_data_dir):
-        """Test chop on nonexistent extension returns VE302."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["chop", "--md", "-forget"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-        assert "VE302" in result.output or "no default" in result.output.lower()
-    
-    def test_chop_invalid_extension_fails(self, runner, isolated_data_dir):
-        """Test chop with invalid extension returns VE102."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["chop", "--xyz"],  # Unsupported extension
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        # Should fail with invalid extension error
-        assert result.exit_code != 0
+class TestExtensionValidation:
+    """Property-based tests for extension validation."""
+
+    @given(ext=valid_extensions())
+    @settings(max_examples=100)
+    def test_valid_extensions_pass(self, ext):
+        """Property: All supported extensions should validate successfully."""
+        result = validate_extension(ext)
+        assert result == ext.lower()
+        assert result in SUPPORTED_EXTENSIONS
+
+    @given(ext=unsupported_extensions())
+    @settings(max_examples=100)
+    def test_unsupported_extensions_fail(self, ext):
+        """Property: Unsupported extensions should raise InvalidExtensionError."""
+        with pytest.raises(InvalidExtensionError) as exc_info:
+            validate_extension(ext)
+
+        assert exc_info.value.code == "VE102"
 ```
 
-### set/forget Command Tests
+### Offer ID Validation Tests
 
 ```python
-class TestSetForgetCommands:
-    """Test cases for set and forget commands."""
-    
-    def test_set_creates_active_default(self, runner, mock_executable, isolated_data_dir):
-        """Test set creates an active default directly."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["set", str(mock_executable), "--py"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        
-        import json
-        defaults = json.loads((isolated_data_dir / "defaults.json").read_text())
-        py_defaults = [d for d in defaults["defaults"] if d["extension"] == ".py"]
-        assert len(py_defaults) == 1
-    
-    def test_forget_removes_default(self, runner, populated_data_dir):
-        """Test forget removes an existing default."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["forget", "--md"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_forget_nonexistent_fails(self, runner, isolated_data_dir):
-        """Test forget on nonexistent default returns VE302."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["forget", "--py"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
+class TestOfferIdValidation:
+    """Property-based tests for offer ID validation."""
+
+    @given(offer_id=valid_offer_ids())
+    @settings(max_examples=100)
+    def test_valid_offer_ids_pass(self, offer_id):
+        """Property: Valid offer IDs should validate successfully."""
+        result = validate_offer_id(offer_id)
+        assert result == offer_id
+        assert OFFER_ID_PATTERN.match(result)
+        assert result not in RESERVED_NAMES
+
+    @given(name=st.sampled_from(list(RESERVED_NAMES)))
+    @settings(max_examples=100)
+    def test_reserved_names_fail(self, name):
+        """Property: Reserved names should raise InvalidOfferIdError."""
+        with pytest.raises(InvalidOfferIdError) as exc_info:
+            validate_offer_id(name)
+
+        assert exc_info.value.code == "VE103"
 ```
 
-### offer/reject Command Tests
+### State Machine Tests
 
 ```python
-class TestOfferRejectCommands:
-    """Test cases for offer and reject commands."""
-    
-    def test_offer_creates_new_offer(self, runner, mock_executable, isolated_data_dir):
-        """Test offer creates a new offer entry."""
-        from vince.main import app
-        
-        # First create a default
-        runner.invoke(
-            app,
-            ["set", str(mock_executable), "--md"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        # Then create an offer
-        result = runner.invoke(
-            app,
-            ["offer", "my-code", str(mock_executable), "--md"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        
-        import json
-        offers = json.loads((isolated_data_dir / "offers.json").read_text())
-        assert any(o["offer_id"] == "my-code" for o in offers["offers"])
-    
-    def test_offer_invalid_id_fails(self, runner, mock_executable, isolated_data_dir):
-        """Test offer with invalid ID returns VE103."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["offer", "Invalid-ID", str(mock_executable), "--md"],  # Uppercase
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-        assert "VE103" in result.output or "pattern" in result.output.lower()
-    
-    def test_offer_reserved_name_fails(self, runner, mock_executable, isolated_data_dir):
-        """Test offer with reserved name returns VE103."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["offer", "help", str(mock_executable), "--md"],  # Reserved
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-    
-    def test_reject_removes_offer(self, runner, populated_data_dir):
-        """Test reject removes an existing offer."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["reject", "code-md"],  # From sample_offers fixture
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_reject_nonexistent_fails(self, runner, isolated_data_dir):
-        """Test reject on nonexistent offer returns VE104."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["reject", "nonexistent"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-        assert "VE104" in result.output or "not found" in result.output.lower()
-    
-    def test_reject_complete_delete(self, runner, populated_data_dir):
-        """Test reject with complete-delete flag."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["reject", "code-md", "."],  # Complete delete
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
+class TestDefaultStateTransitions:
+    """Property-based tests for default state transitions."""
+
+    @given(transition=valid_default_transitions(), ext=extensions())
+    @settings(max_examples=100)
+    def test_valid_transitions_succeed(self, transition, ext):
+        """Property: All valid transitions should succeed without raising errors."""
+        current, target = transition
+        validate_transition(current, target, ext)
+
+    @given(ext=extensions())
+    @settings(max_examples=100)
+    def test_none_to_removed_raises_no_default_error(self, ext):
+        """Property: Transitioning from none to removed should raise NoDefaultError."""
+        with pytest.raises(NoDefaultError) as exc_info:
+            validate_transition(DefaultState.NONE, DefaultState.REMOVED, ext)
+
+        assert exc_info.value.code == "VE302"
 ```
 
-### list Command Tests
+### Persistence Round-Trip Tests
 
 ```python
-class TestListCommand:
-    """Test cases for the list command."""
-    
-    def test_list_all_shows_everything(self, runner, populated_data_dir):
-        """Test list -all shows all tracked items."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-all"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        # Should contain table output
-        assert len(result.output) > 0
-    
-    def test_list_defaults_only(self, runner, populated_data_dir):
-        """Test list -def shows only defaults."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-def"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_list_offers_only(self, runner, populated_data_dir):
-        """Test list -off shows only offers."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-off"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_list_filter_by_extension(self, runner, populated_data_dir):
-        """Test list with extension filter."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-def", "--md"],
-            env={"VINCE_DATA_DIR": str(populated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-    
-    def test_list_invalid_subsection_fails(self, runner, isolated_data_dir):
-        """Test list with invalid subsection returns VE105."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-invalid"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code != 0
-        assert "VE105" in result.output or "invalid" in result.output.lower()
-    
-    def test_list_empty_data(self, runner, isolated_data_dir):
-        """Test list with no data shows empty state."""
-        from vince.main import app
-        
-        result = runner.invoke(
-            app,
-            ["list", "-all"],
-            env={"VINCE_DATA_DIR": str(isolated_data_dir)}
-        )
-        
-        assert result.exit_code == 0
-        # Should handle empty state gracefully
+class TestPersistenceRoundTrip:
+    """Property-based tests for persistence round-trip consistency."""
+
+    @given(
+        ext=valid_extensions(),
+        app_path=valid_application_paths(),
+        state=valid_states()
+    )
+    @settings(max_examples=100)
+    def test_defaults_round_trip(self, ext, app_path, state):
+        """Property: DefaultsStore save then load returns equivalent data."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            unique_id = str(uuid.uuid4())
+            data_dir = Path(tmp_dir) / f".vince_{unique_id}"
+            data_dir.mkdir(exist_ok=True)
+
+            store = DefaultsStore(data_dir)
+
+            # Add entry
+            added_entry = store.add(
+                extension=ext,
+                application_path=app_path,
+                state=state,
+                backup_enabled=False,
+            )
+
+            # Create a new store instance to force reload from disk
+            store2 = DefaultsStore(data_dir)
+
+            # Load and verify
+            loaded_data = store2.load()
+
+            assert len(loaded_data["defaults"]) == 1
+            loaded_entry = loaded_data["defaults"][0]
+
+            assert loaded_entry["id"] == added_entry["id"]
+            assert loaded_entry["extension"] == ext
+            assert loaded_entry["application_path"] == app_path
+            assert loaded_entry["state"] == state
+```
+
+### Backup Retention Tests
+
+```python
+class TestBackupRetention:
+    """Property-based tests for backup retention limit."""
+
+    @given(
+        num_writes=st.integers(min_value=1, max_value=10),
+        max_backups=st.integers(min_value=1, max_value=5),
+    )
+    @settings(max_examples=100)
+    def test_backup_count_never_exceeds_max(self, num_writes, max_backups):
+        """Property: Backup count never exceeds max_backups."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            unique_id = str(uuid.uuid4())
+            data_dir = Path(tmp_dir) / f".vince_{unique_id}"
+            data_dir.mkdir(exist_ok=True)
+
+            store = DefaultsStore(data_dir)
+            backup_dir = store.backup_dir
+
+            for i in range(num_writes):
+                store.add(
+                    extension=f".ext{i}",
+                    application_path=f"/usr/bin/app{i}",
+                    state="pending",
+                    backup_enabled=True,
+                    max_backups=max_backups,
+                )
+                time.sleep(0.01)
+
+            if backup_dir.exists():
+                backup_files = list(backup_dir.glob("defaults.*.bak"))
+                backup_count = len(backup_files)
+            else:
+                backup_count = 0
+
+            assert backup_count <= max_backups
 ```
 
 ## Cross-References
@@ -1076,3 +709,4 @@ class TestListCommand:
 - See [errors.md](errors.md) for error code documentation
 - See [states.md](states.md) for state machine documentation
 - See [schemas.md](schemas.md) for data model schemas
+- See [tables.md](tables.md) for the Single Source of Truth definitions

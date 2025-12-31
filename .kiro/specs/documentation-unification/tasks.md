@@ -178,85 +178,85 @@ This implementation plan provides a systematic approach to unifying the vince CL
     - **Property 9: Validation Pattern Documentation**
     - **Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5**
 
-- [-] 11. Update config.md
-  - [ ] 11.1 Synchronize config options
+- [x] 11. Update config.md
+  - [x] 11.1 Synchronize config options
     - Match options to `DEFAULT_CONFIG` in `vince/config.py`
     - Verify types, defaults, and descriptions
     - _Requirements: 1.4_
-  - [ ] 11.2 Verify config hierarchy documentation
+  - [x] 11.2 Verify config hierarchy documentation
     - Document precedence: CLI flags > Project > User > Default
     - Match to `get_config()` implementation
     - _Requirements: 1.4_
-  - [ ] 11.3 Add cross-references section
+  - [x] 11.3 Add cross-references section
     - Link to tables.md CONFIG_OPTIONS table
     - Link to schemas.md for config.json schema
     - _Requirements: 3.1, 10.2_
 
-- [ ] 12. Update examples.md
-  - [ ] 12.1 Ensure examples exist for all commands
+- [x] 12. Update examples.md
+  - [x] 12.1 Ensure examples exist for all commands
     - Verify slap, chop, set, forget, offer, reject, list have examples
     - _Requirements: 7.1_
-  - [ ] 12.2 Verify flag syntax in examples
+  - [x] 12.2 Verify flag syntax in examples
     - Check all flags use correct prefix (- for short, -- for long)
     - Match to actual flag definitions in source
     - _Requirements: 7.2_
-  - [ ] 12.3 Add examples for QOL flags
+  - [x] 12.3 Add examples for QOL flags
     - Add examples showing -set, -forget, -slap, -chop, -offer, -reject usage
     - _Requirements: 7.4_
-  - [ ] 12.4 Add examples for all extension types
+  - [x] 12.4 Add examples for all extension types
     - Ensure at least one example per supported extension
     - _Requirements: 7.5_
-  - [ ] 12.5 Add cross-references section
+  - [x] 12.5 Add cross-references section
     - Link to api.md for command details
     - Link to tables.md for flag definitions
     - _Requirements: 3.1, 10.2_
-  - [ ] 12.6 Write property test for example coverage
+  - [x] 12.6 Write property test for example coverage
     - **Property 7: Example Coverage**
     - **Validates: Requirements 7.1, 7.2, 7.4, 7.5**
 
-- [ ] 13. Update testing.md
-  - [ ] 13.1 Synchronize test fixtures with actual tests
+- [x] 13. Update testing.md
+  - [x] 13.1 Synchronize test fixtures with actual tests
     - Match fixtures to `tests/conftest.py` if exists
     - Update mock patterns to match actual usage
     - _Requirements: 1.1_
-  - [ ] 13.2 Update generator strategies
+  - [x] 13.2 Update generator strategies
     - Match Hypothesis strategies to actual test implementations
     - _Requirements: 1.1_
-  - [ ] 13.3 Add cross-references section
+  - [x] 13.3 Add cross-references section
     - Link to api.md for command interfaces
     - Link to schemas.md for data structures
     - _Requirements: 3.1, 10.2_
 
-- [ ] 14. Update README.md
-  - [ ] 14.1 Verify all documentation links are valid
+- [x] 14. Update README.md
+  - [x] 14.1 Verify all documentation links are valid
     - Check all relative paths resolve correctly
     - _Requirements: 3.1_
-  - [ ] 14.2 Ensure Overview section exists
+  - [x] 14.2 Ensure Overview section exists
     - Verify document has clear purpose statement
     - _Requirements: 10.6_
 
-- [ ] 15. Checkpoint - Full validation
+- [x] 15. Checkpoint - Full validation
   - Run `python validate_docs.py --all`
   - Ensure zero errors across all documents
 
-- [ ] 16. Cross-Reference Validation
-  - [ ] 16.1 Validate all document links
+- [x] 16. Cross-Reference Validation
+  - [x] 16.1 Validate all document links
     - Check all markdown links resolve to existing files
     - _Requirements: 3.1_
-  - [ ] 16.2 Validate all identifier references
+  - [x] 16.2 Validate all identifier references
     - Check all referenced identifiers exist in tables.md
     - _Requirements: 3.2, 3.3_
-  - [ ] 16.3 Validate error code references
+  - [x] 16.3 Validate error code references
     - Check all VE### codes match ERRORS table
     - _Requirements: 3.4_
-  - [ ] 16.4 Validate command references
+  - [x] 16.4 Validate command references
     - Check all command names match COMMANDS table
     - _Requirements: 3.5_
-  - [ ] 16.5 Write property test for cross-reference integrity
+  - [x] 16.5 Write property test for cross-reference integrity
     - **Property 3: Cross-Reference Integrity**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
 
-- [ ] 17. Document Structure Validation
+- [-] 17. Document Structure Validation
   - [ ] 17.1 Verify all documents have Overview sections
     - Check each doc file starts with purpose statement
     - _Requirements: 10.6_

@@ -1,45 +1,59 @@
 # Examples
 
+## Overview
+
+This document provides usage examples for all vince CLI commands. Each example demonstrates correct flag syntax and common workflows.
+
 ## `slap`
 
-Set an application as the default for a file extension. When a slap is set, an `offer` is automatically created and added to the CLI list command (`list -off`).
+Set an application as the default for a file extension. When used with `-set`, an `offer` is automatically created and added to the CLI list command (`list -off`).
 
 > [!NOTE]
-> The `slap` command auto-creates an `offer` for the default, making it available as a custom shortcut.
+> The `slap` command auto-creates an `offer` for the default when using `-set`, making it available as a custom shortcut.
 
 ### Basic Usage
 
 ```sh
-# S1: Set application as default for markdown files
-vince slap <path/to/application/app.exe> --md
+# Set application as default for markdown files (pending state)
+vince slap /path/to/app --md
 
-# S2: Set application as default for python files
-vince slap <path/to/application/app.exe> --py
+# Set application as default for python files (pending state)
+vince slap /path/to/app --py
 ```
 
-### With QOL Flag Combinations
+### With -set Flag (Active State)
 
 ```sh
-# S1: Using -set flag with extension
-vince slap <path/to/application/app.exe> -set --md
+# Set as active default immediately (also creates offer)
+vince slap /path/to/app -set --md
 
-# S2: Using verbose output
-vince slap <path/to/application/app.exe> --md -vb
+# Set as active default for text files
+vince slap /path/to/app -set --txt
+```
 
-# S3: Using debug mode
-vince slap <path/to/application/app.exe> --md -db
+### With Verbose Output
+
+```sh
+# Using verbose output with short flag
+vince slap /path/to/app --md -vb
+
+# Using verbose output with long flag
+vince slap /path/to/app --md --verbose
 ```
 
 ### Multi-Step Workflow
 
 ```sh
-# S1: Identify an application path to set as default
-vince slap <path/to/application/app.exe>
+# Step 1: Set application as pending default for markdown
+vince slap /path/to/app --md
 
-# S2: Set S1 application as default for markdown extension
-vince slap <path/to/application/app.exe> --md
+# Step 2: Verify the default was created
+vince list -def
 
-# S3: Verify the offer was auto-created
+# Step 3: Set as active with offer creation
+vince slap /path/to/app -set --md
+
+# Step 4: Verify the offer was auto-created
 vince list -off
 ```
 
@@ -50,99 +64,92 @@ Remove or forget a file extension association.
 ### Basic Usage
 
 ```sh
-# S1: Remove the default for markdown files
+# Show current default for markdown files (no state change)
 vince chop --md
 
-# S2: Remove the default for python files
+# Show current default for python files
 vince chop --py
 ```
 
-### With `.` Operator (All Extensions)
+### With -forget Flag (Remove Default)
 
 ```sh
-# S1: Remove all file extension associations
-vince chop .
+# Remove the default for markdown files
+vince chop -forget --md
+
+# Remove the default for python files
+vince chop -forget --py
 ```
 
-### With Flag Combinations
+### With Verbose Output
 
 ```sh
-# S1: Remove default with verbose output
-vince chop --md -vb
+# Remove default with verbose output
+vince chop -forget --md -vb
 
-# S2: Remove default with debug mode
-vince chop --py -db
+# Remove default with long verbose flag
+vince chop -forget --py --verbose
 ```
 
 ## `set`
 
-Set a default application for a file extension. Unlike `slap`, this is the direct command form without auto-offer creation.
+Set a default application for a file extension. Creates an active default entry immediately.
 
 ### Basic Usage
 
 ```sh
-# S1: Set application as default for markdown files
-vince set <path/to/application/app.exe> --md
+# Set application as active default for markdown files
+vince set /path/to/app --md
 
-# S2: Set application as default for text files
-vince set <path/to/application/app.exe> --txt
+# Set application as active default for text files
+vince set /path/to/app --txt
 ```
 
-### With QOL Flag Combinations
+### With Verbose Output
 
 ```sh
-# S1: Using -set flag explicitly
-vince set <path/to/application/app.exe> -set --md
+# Set default with verbose output
+vince set /path/to/app --md -vb
 
-# S2: Using verbose output
-vince set <path/to/application/app.exe> --md -vb
-
-# S3: Using debug mode
-vince set <path/to/application/app.exe> --md -db
+# Set default with long verbose flag
+vince set /path/to/app --json --verbose
 ```
 
 ### Multi-Step Workflow
 
 ```sh
-# S1: Identify an application path
-vince set <path/to/application/app.exe>
+# Step 1: Set application as default for json extension
+vince set /path/to/app --json
 
-# S2: Set S1 application as default for json extension
-vince set <path/to/application/app.exe> --json
-
-# S3: Verify the default was set
+# Step 2: Verify the default was set
 vince list -def
+
+# Step 3: Create an offer for quick access
+vince offer my-json-editor /path/to/app --json
 ```
 
 ## `forget`
 
-Forget a default for a file extension.
+Forget a default for a file extension. Transitions the default state to removed.
 
 ### Basic Usage
 
 ```sh
-# S1: Forget the default for markdown files
+# Forget the default for markdown files
 vince forget --md
 
-# S2: Forget the default for python files
+# Forget the default for python files
 vince forget --py
 ```
 
-### With `.` Operator (All Extensions)
+### With Verbose Output
 
 ```sh
-# S1: Forget all file extension defaults
-vince forget .
-```
-
-### With Flag Combinations
-
-```sh
-# S1: Forget default with verbose output
+# Forget default with verbose output
 vince forget --md -vb
 
-# S2: Forget default with debug mode
-vince forget --py -db
+# Forget default with long verbose flag
+vince forget --py --verbose
 ```
 
 ## `offer`
@@ -152,21 +159,21 @@ Create a custom shortcut/alias for quick access.
 ### Basic Usage
 
 ```sh
-# S1: Create an offer for a specific application
-vince offer <offer_id> <path/to/application/app.exe>
+# Create an offer for a specific application
+vince offer my-editor /path/to/app --md
 
-# S2: Create an offer with extension association
-vince offer <offer_id> <path/to/application/app.exe> --md
+# Create an offer with extension association
+vince offer code-py /path/to/vscode --py
 ```
 
-### With Flag Combinations
+### With Verbose Output
 
 ```sh
-# S1: Create offer with verbose output
-vince offer <offer_id> <path/to/application/app.exe> -vb
+# Create offer with verbose output
+vince offer my-editor /path/to/app --md -vb
 
-# S2: Create offer using -offer flag
-vince offer <offer_id> <path/to/application/app.exe> -offer
+# Create offer with long verbose flag
+vince offer my-editor /path/to/app --txt --verbose
 ```
 
 ## `reject`
@@ -176,31 +183,38 @@ Remove a custom offer/shortcut.
 ### Basic Usage
 
 ```sh
-# S1: Remove a specific offer by ID
-vince reject <offer_id>
+# Remove a specific offer by ID
+vince reject my-editor
 ```
 
 ### Complete Delete Workflow
 
 ```sh
-# S1: List all offers to find the target
+# Step 1: List all offers to find the target
 vince list -off
 
-# S2: Reject the specific offer
-vince reject <offer_id>
+# Step 2: Reject the specific offer (transitions to rejected state)
+vince reject my-editor
 
-# S3: Verify the offer was removed
+# Step 3: Verify the offer was removed
 vince list -off
 ```
 
-### With Flag Combinations
+### With Complete Delete Flag
 
 ```sh
-# S1: Reject offer with verbose output
-vince reject <offer_id> -vb
+# Permanently remove offer from data file
+vince reject my-editor -.
+```
 
-# S2: Reject offer with debug mode
-vince reject <offer_id> -db
+### With Verbose Output
+
+```sh
+# Reject offer with verbose output
+vince reject my-editor -vb
+
+# Reject offer with long verbose flag
+vince reject my-editor --verbose
 ```
 
 ## `list`
@@ -208,62 +222,206 @@ vince reject <offer_id> -db
 Display tracked assets and offers.
 
 > [!NOTE]
-> The `.` operator shows all subsections at once.
+> When no subsection flag is specified, `-all` is used by default.
 
 ### Show All Lists
 
 ```sh
-# S1: Show all lists using the wildcard operator
-vince list .
-
-# S2: Alternative using -all flag
+# Show all lists using -all flag
 vince list -all
+
+# Show all lists (default behavior)
+vince list
 ```
 
 ### List Applications
 
 ```sh
-# S1: List all tracked applications
+# List all tracked applications
 vince list -app
 ```
 
 ### List Commands
 
 ```sh
-# S1: List all available commands
+# List all available commands/offers
 vince list -cmd
 ```
 
 ### List Extensions
 
 ```sh
-# S1: List all tracked extensions
+# List all tracked extensions
 vince list -ext
 ```
 
 ### List Defaults
 
 ```sh
-# S1: List all set defaults
+# List all set defaults
 vince list -def
 ```
 
 ### List Offers
 
 ```sh
-# S1: List all custom offers
+# List all custom offers
 vince list -off
 
-# S2: List offers filtered by extension
+# List offers filtered by extension
 vince list -off --md
 ```
 
 ### Combined Examples
 
 ```sh
-# S1: List defaults with verbose output
+# List defaults with verbose output
 vince list -def -vb
 
-# S2: List offers with debug mode
-vince list -off -db
+# List offers with verbose output
+vince list -off --verbose
 ```
+
+## Extension Flag Examples
+
+All 12 supported extensions with their flags:
+
+### Markdown (.md)
+
+```sh
+vince slap /path/to/app --md
+vince set /path/to/app --md
+vince forget --md
+vince list -def --md
+```
+
+### Python (.py)
+
+```sh
+vince slap /path/to/app --py
+vince set /path/to/app --py
+vince forget --py
+vince list -def --py
+```
+
+### Text (.txt)
+
+```sh
+vince slap /path/to/app --txt
+vince set /path/to/app --txt
+vince forget --txt
+vince list -def --txt
+```
+
+### JavaScript (.js)
+
+```sh
+vince slap /path/to/app --js
+vince set /path/to/app --js
+vince forget --js
+vince list -def --js
+```
+
+### HTML (.html)
+
+```sh
+vince slap /path/to/app --html
+vince set /path/to/app --html
+vince forget --html
+vince list -def --html
+```
+
+### CSS (.css)
+
+```sh
+vince slap /path/to/app --css
+vince set /path/to/app --css
+vince forget --css
+vince list -def --css
+```
+
+### JSON (.json)
+
+```sh
+vince slap /path/to/app --json
+vince set /path/to/app --json
+vince forget --json
+vince list -def --json
+```
+
+### YAML (.yml)
+
+```sh
+vince slap /path/to/app --yml
+vince set /path/to/app --yml
+vince forget --yml
+vince list -def --yml
+```
+
+### YAML (.yaml)
+
+```sh
+vince slap /path/to/app --yaml
+vince set /path/to/app --yaml
+vince forget --yaml
+vince list -def --yaml
+```
+
+### XML (.xml)
+
+```sh
+vince slap /path/to/app --xml
+vince set /path/to/app --xml
+vince forget --xml
+vince list -def --xml
+```
+
+### CSV (.csv)
+
+```sh
+vince slap /path/to/app --csv
+vince set /path/to/app --csv
+vince forget --csv
+vince list -def --csv
+```
+
+### SQL (.sql)
+
+```sh
+vince slap /path/to/app --sql
+vince set /path/to/app --sql
+vince forget --sql
+vince list -def --sql
+```
+
+## QOL Flag Examples
+
+Quality of Life flags that mirror command behavior:
+
+### -set Flag (with slap)
+
+```sh
+# Set as active default immediately
+vince slap /path/to/app -set --md
+
+# Equivalent to running slap then set
+vince slap /path/to/app --md
+vince set /path/to/app --md
+```
+
+### -forget Flag (with chop)
+
+```sh
+# Remove the default for an extension
+vince chop -forget --md
+
+# Equivalent to running forget
+vince forget --md
+```
+
+## Cross-References
+
+- [API Documentation](api.md) - Command function signatures and parameters
+- [Tables Reference](tables.md) - Complete flag and command definitions
+- [Errors Reference](errors.md) - Error codes that may be raised
+- [States Reference](states.md) - State transitions for defaults and offers

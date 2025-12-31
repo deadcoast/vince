@@ -1,8 +1,12 @@
 # `vince` - A Rich CLI Application
 
-Vince is a simple, sopthisticated CLI created with elevated visual ASCII UI delivery to quickly set default applications to file extensions. Its quick, intuitive and visually friendly design sets the new standard for user quality of life and visual CLI UI design.
+## Overview
 
-- *Inspired by Infomercials of the Millennials Age*
+Vince is a sophisticated CLI created with elevated visual ASCII UI delivery to quickly set default applications to file extensions. Its quick, intuitive and visually friendly design sets the new standard for user quality of life and visual CLI UI design.
+
+This documentation serves as the comprehensive reference for the vince CLI, covering all commands, data schemas, error handling, state management, and configuration options.
+
+*Inspired by Infomercials of the Millennials Age*
 
 ## FRAMEWORK
 
@@ -137,3 +141,12 @@ uv lock --upgrade
 # Upgrades specific package(s) only
 uv lock --upgrade-package <package> 
 ```
+
+
+## Cross-References
+
+- [Project README](../README.md) - Project root documentation
+- [Tables](tables.md) - Single Source of Truth for all definitions
+- [API](api.md) - Command function signatures and parameters
+- [Schemas](schemas.md) - Data structure definitions
+- [Errors](errors.md) - Error codes and recovery actions
