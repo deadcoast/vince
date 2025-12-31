@@ -75,7 +75,7 @@ def validate_heading_hierarchy(content: str, filename: str) -> ValidationResult:
     # Track state
     found_h1 = False
     found_h2_after_last_h1 = False
-    current_h2_section = False
+    current_h2_section: Optional[str] = None  # Track current H2 for context in errors
     
     # Pattern to match headings (not in code blocks)
     heading_pattern = re.compile(r'^(#{1,6})\s+(.+)$')
@@ -106,7 +106,6 @@ def validate_heading_hierarchy(content: str, filename: str) -> ValidationResult:
                 )
             found_h1 = True
             found_h2_after_last_h1 = False
-            current_h2_section = False
         
         elif level == 2:
             if not found_h1:
@@ -115,7 +114,7 @@ def validate_heading_hierarchy(content: str, filename: str) -> ValidationResult:
                     f"H2 '{heading_text}' appears before any H1 heading"
                 )
             found_h2_after_last_h1 = True
-            current_h2_section = True
+            current_h2_section = heading_text  # Track current section for context
         
         elif level == 3:
             if not found_h1:
@@ -124,9 +123,10 @@ def validate_heading_hierarchy(content: str, filename: str) -> ValidationResult:
                     f"H3 '{heading_text}' appears before any H1 heading"
                 )
             elif not found_h2_after_last_h1:
+                section_context = " (no parent section)" if not current_h2_section else f" (expected under '{current_h2_section}')"
                 result.add_error(
                     filename, line_num, "1.2",
-                    f"H3 '{heading_text}' appears without a preceding H2 heading"
+                    f"H3 '{heading_text}' appears without a preceding H2 heading{section_context}"
                 )
     
     # Check that document starts with H1
@@ -283,7 +283,7 @@ def validate_code_blocks(content: str, filename: str) -> ValidationResult:
     
     # Better approach: track code blocks properly
     in_code_block = False
-    code_block_start = None
+    code_block_start: Optional[int] = None  # Track start line for unclosed block detection
     
     for line_num, line in enumerate(lines, 1):
         stripped = line.strip()
@@ -303,6 +303,13 @@ def validate_code_blocks(content: str, filename: str) -> ValidationResult:
                 # Closing fence
                 in_code_block = False
                 code_block_start = None
+    
+    # Check for unclosed code blocks
+    if in_code_block and code_block_start:
+        result.add_error(
+            filename, code_block_start, "1.4",
+            f"Code block opened at line {code_block_start} is never closed"
+        )
     
     return result
 
@@ -338,8 +345,8 @@ def validate_entry_completeness(content: str, filename: str) -> ValidationResult
     lines = content.split('\n')
     current_section = None
     in_table = False
-    table_headers = []
-    table_start_line = None
+    table_headers: list[str] = []
+    table_start_line: Optional[int] = None  # Track where table starts for error context
     
     in_code_block = False
     
@@ -361,6 +368,7 @@ def validate_entry_completeness(content: str, filename: str) -> ValidationResult
                 current_section = section_name
                 in_table = False
                 table_headers = []
+                table_start_line = None
             else:
                 current_section = None
         
@@ -379,7 +387,7 @@ def validate_entry_completeness(content: str, filename: str) -> ValidationResult
                     if req_field not in table_headers:
                         result.add_error(
                             filename, line_num, "2.1",
-                            f"Table {current_section} missing required column: {req_field}"
+                            f"Table {current_section} (starting line {table_start_line}) missing required column: {req_field}"
                         )
             elif stripped.startswith('|') and '---' in stripped:
                 # Separator row, skip
@@ -429,7 +437,7 @@ def validate_sid_naming(content: str, filename: str) -> ValidationResult:
     lines = content.split('\n')
     in_code_block = False
     in_table = False
-    table_headers = []
+    table_headers: list[str] = []  # Track headers to know column positions
     sid_col_idx = -1
     id_col_idx = -1
     
@@ -452,7 +460,7 @@ def validate_sid_naming(content: str, filename: str) -> ValidationResult:
                 table_headers = cells
                 sid_col_idx = -1
                 id_col_idx = -1
-                for i, h in enumerate(cells):
+                for i, h in enumerate(table_headers):
                     if h.lower() == 'sid':
                         sid_col_idx = i
                     if h.lower() == 'id':
@@ -494,23 +502,26 @@ def validate_sid_naming(content: str, filename: str) -> ValidationResult:
                 # Check if sid follows convention
                 id_clean = id_val.strip('`')
                 if '_' in id_clean:
-                    # Two-word: should be first 2 letters of each word
+                    # Two-word: should be first 2 letters of each word (e.g., short_id -> sid)
                     parts = id_clean.split('_')
                     if len(parts) == 2:
                         expected = parts[0][:2] + parts[1][:2]
-                        # Allow for collision handling (subsequent letters)
-                        if not sid.startswith(parts[0][:2]):
+                        # Check if sid matches expected or starts with first part (collision handling)
+                        if sid != expected and not sid.startswith(parts[0][:2]):
                             result.add_warning(
                                 filename, line_num, "2.4",
-                                f"SID '{sid}' may not follow two-word convention for id '{id_val}'"
+                                f"SID '{sid}' may not follow two-word convention for id '{id_val}' (expected '{expected}' or collision variant)"
                             )
                 else:
-                    # One-word: should be first 2 letters
+                    # One-word: should be first 2 letters (e.g., step -> st)
                     if len(id_clean) >= 2 and len(sid) >= 2:
-                        # Allow for collision handling
-                        if not id_clean.lower().startswith(sid[:2].lower()):
-                            # Could be collision handling, just warn
-                            pass
+                        expected = id_clean[:2].lower()
+                        # Allow for collision handling (subsequent letters)
+                        if sid[:2].lower() != expected:
+                            result.add_warning(
+                                filename, line_num, "2.4",
+                                f"SID '{sid}' may not follow one-word convention for id '{id_val}' (expected '{expected}' or collision variant)"
+                            )
     
     return result
 
@@ -816,8 +827,11 @@ def validate_rule_format(content: str, filename: str) -> ValidationResult:
     # Pattern for valid rid format (2-4 uppercase letters + 2 digits)
     rid_pattern = re.compile(r'\[([A-Z]{2,4}\d{2})\]')
     
-    # Pattern for potentially malformed rule references
-    malformed_pattern = re.compile(r'\[([a-z]{2,4}\d{2})\]')  # lowercase
+    # Pattern for potentially malformed rule references (lowercase)
+    malformed_pattern = re.compile(r'\[([a-z]{2,4}\d{2})\]')
+    
+    # Track all valid rule references found
+    valid_rule_refs: set[str] = set()
     
     for line_num, line in enumerate(lines, 1):
         if line.strip().startswith('```'):
@@ -827,12 +841,26 @@ def validate_rule_format(content: str, filename: str) -> ValidationResult:
         if in_code_block:
             continue
         
+        # Collect valid rule references
+        for match in rid_pattern.finditer(line):
+            valid_rule_refs.add(match.group(1))
+        
         # Check for malformed (lowercase) rule references
         for match in malformed_pattern.finditer(line):
             rid = match.group(1)
             result.add_warning(
                 filename, line_num, "9.2",
                 f"Rule reference '[{rid}]' should use uppercase: '[{rid.upper()}]'"
+            )
+    
+    # Validate that rule references follow the expected format categories
+    known_prefixes = {'PD', 'UID', 'TB', 'SL', 'CH', 'SE', 'FO', 'OF', 'RE', 'LI'}
+    for rid in valid_rule_refs:
+        prefix = ''.join(c for c in rid if c.isalpha())
+        if prefix not in known_prefixes:
+            result.add_warning(
+                filename, None, "9.4",
+                f"Rule reference '[{rid}]' uses unknown prefix '{prefix}'"
             )
     
     return result
