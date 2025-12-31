@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/validation/extension.py
+# hypothesis_version: 6.148.7
+
+['-', '--', '.', '.css', '.csv', '.html', '.js', '.json', '.md', '.py', '.sql', '.txt', '.xml', '.yaml', '.yml', '^\\.[a-z0-9]+$']

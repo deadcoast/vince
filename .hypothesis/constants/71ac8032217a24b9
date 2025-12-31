@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/validation/offer_id.py
+# hypothesis_version: 6.148.7
+
+['all', 'default', 'help', 'list', 'none', 'version']

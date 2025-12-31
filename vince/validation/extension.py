@@ -20,7 +20,7 @@ SUPPORTED_EXTENSIONS = {
 
 
 def validate_extension(ext: str) -> str:
-    """Validate file extension format and support.
+    r"""Validate file extension format and support.
     
     Performs two checks:
     1. Extension matches pattern ^\.[a-z0-9]+$

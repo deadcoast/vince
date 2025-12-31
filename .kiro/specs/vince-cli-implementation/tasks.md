@@ -77,7 +77,7 @@ This implementation plan creates the vince CLI Python application following the 
   - Ensure all error classes are defined
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 5. Implement validation system
+- [x] 5. Implement validation system
   - [x] 5.1 Implement path validator
     - Create vince/validation/path.py
     - Implement validate_path() with exists, is_file, executable checks
@@ -89,25 +89,25 @@ This implementation plan creates the vince CLI Python application following the 
     - Test valid paths pass, invalid paths raise correct errors
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 
-  - [-] 5.3 Implement extension validator
+  - [x] 5.3 Implement extension validator
     - Create vince/validation/extension.py
     - Define EXTENSION_PATTERN and SUPPORTED_EXTENSIONS
     - Implement validate_extension() with pattern and support checks
     - Implement flag_to_extension() helper
     - _Requirements: 3.5, 3.6, 3.7_
 
-  - [ ] 5.4 Write property test for extension validation
+  - [x] 5.4 Write property test for extension validation
     - **Property 2: Extension Validation Correctness**
     - Test valid extensions pass, invalid extensions raise errors
     - **Validates: Requirements 3.5, 3.6, 3.7**
 
-  - [ ] 5.5 Implement offer_id validator
+  - [x] 5.5 Implement offer_id validator
     - Create vince/validation/offer_id.py
     - Define OFFER_ID_PATTERN and RESERVED_NAMES
     - Implement validate_offer_id() with pattern and reserved checks
     - _Requirements: 3.8, 3.9, 3.10_
 
-  - [ ] 5.6 Write property test for offer_id validation
+  - [x] 5.6 Write property test for offer_id validation
     - **Property 3: Offer ID Validation Correctness**
     - Test valid offer_ids pass, invalid ones raise errors
     - **Validates: Requirements 3.8, 3.9, 3.10**
