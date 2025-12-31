@@ -1,0 +1,1 @@
+"""Vince CLI validation functions."""

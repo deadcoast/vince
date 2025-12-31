@@ -1,18 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "vince"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "A Rich CLI for setting default applications to file extensions"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.10"
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
-    "hypothesis>=6.100.0",
+    "pytest-cov>=4.0.0",
+    "hypothesis>=6.0.0",
 ]
+
+[project.scripts]
+vince = "vince.main:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
+addopts = "-v --cov=vince --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["vince"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
