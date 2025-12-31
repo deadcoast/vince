@@ -15,9 +15,26 @@ Vince is a simple, sopthisticated CLI created with elevated visual ASCII UI deli
 
 For detailed information about the `vince` CLI, see the following documentation:
 
+### Core Documentation
+
 - [Overview](overview.md) - System design, commands, flags, and rules
 - [Examples](examples.md) - Practical usage examples for all commands
 - [Tables](tables.md) - Complete reference tables for all definitions
+
+### API & Data Models
+
+- [API](api.md) - Python interface documentation for all CLI commands
+- [Schemas](schemas.md) - JSON schemas for defaults, offers, and configuration files
+
+### System Behavior
+
+- [Errors](errors.md) - Error catalog with codes, messages, and recovery actions
+- [Config](config.md) - Configuration options, hierarchy, and precedence rules
+- [States](states.md) - State machine documentation for defaults and offers lifecycle
+
+### Development
+
+- [Testing](testing.md) - Testing patterns, fixtures, mocks, and example test cases
 
 ## INSTALLATION
 

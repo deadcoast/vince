@@ -388,8 +388,8 @@ This implementation plan creates the expanded documentation suite for Python int
   - Verify Rich markup is correct
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 19. Update README.md with new documentation links
-  - [-] 19.1 Update DOCUMENTATION section
+- [x] 19. Update README.md with new documentation links
+  - [x] 19.1 Update DOCUMENTATION section
     - Add links to api.md, schemas.md, errors.md
     - Add links to config.md, states.md, testing.md
     - Update descriptions for each document
