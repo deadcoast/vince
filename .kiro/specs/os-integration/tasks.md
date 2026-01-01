@@ -158,7 +158,7 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 5: Rollback on Failure**
     - **Validates: Requirements 9.1, 9.2**
 
-- [ ] 10. Checkpoint - Full integration testing
+- [-] 10. Checkpoint - Full integration testing
   - Ensure all tests pass, ask the user if questions arise.
   - Run full test suite on both platforms (or with mocks)
   - Verify sync command works end-to-end

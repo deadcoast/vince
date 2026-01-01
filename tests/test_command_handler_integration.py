@@ -115,8 +115,8 @@ class TestSlapCommandHandlerIntegration:
             previous_default="/Applications/TextEdit.app",
         )
 
-        with patch("vince.commands.slap.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.slap.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(
                     app, ["slap", str(mock_executable), "-set", "--md"]
                 )
@@ -146,8 +146,8 @@ class TestSlapCommandHandlerIntegration:
             error_code="VE605",
         )
 
-        with patch("vince.commands.slap.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.slap.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(
                     app, ["slap", str(mock_executable), "-set", "--md"]
                 )
@@ -176,8 +176,8 @@ class TestSlapCommandHandlerIntegration:
             previous_default="/Applications/TextEdit.app",
         )
 
-        with patch("vince.commands.slap.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.slap.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(
                     app, ["slap", str(mock_executable), "-set", "-dry", "--md"]
                 )
@@ -214,8 +214,8 @@ class TestSetCommandHandlerIntegration:
             previous_default=None,
         )
 
-        with patch("vince.commands.set_cmd.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.set_cmd.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(
                     app, ["set", str(mock_executable), "--py"]
                 )
