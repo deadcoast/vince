@@ -64,34 +64,34 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 3: Set-Query Round Trip (macOS)**
     - **Validates: Requirements 2.1, 2.4**
 
-- [ ] 4. Implement Windows handler
-  - [ ] 4.1 Create `vince/platform/windows.py` with WindowsHandler class
+- [x] 4. Implement Windows handler
+  - [x] 4.1 Create `vince/platform/windows.py` with WindowsHandler class
     - Implement `platform` property
     - Implement `verify_application()` for .exe validation
     - Implement `_find_executable()` for directory scanning
     - _Requirements: 3.1_
-  - [ ] 4.2 Implement `get_current_default()` for Windows
+  - [x] 4.2 Implement `get_current_default()` for Windows
     - Query UserChoice registry key first
     - Fall back to HKEY_CLASSES_ROOT
     - Resolve ProgID to application path
     - _Requirements: 4.1_
-  - [ ] 4.3 Implement `set_default()` for Windows
+  - [x] 4.3 Implement `set_default()` for Windows
     - Record previous default before change
     - Create ProgID entries
     - Associate extension with ProgID
     - Call SHChangeNotify
     - Support dry_run mode
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 7.1, 7.2, 9.1_
-  - [ ] 4.4 Implement `remove_default()` for Windows
+  - [x] 4.4 Implement `remove_default()` for Windows
     - Delete ProgID entries recursively
     - Remove extension association
     - Notify shell
     - _Requirements: 5.1, 5.3_
-  - [ ] 4.5 Write property test for Windows set-query round trip
+  - [x] 4.5 Write property test for Windows set-query round trip
     - **Property 3: Set-Query Round Trip (Windows)**
     - **Validates: Requirements 3.1, 3.5**
 
-- [ ] 5. Checkpoint - Verify platform handlers work independently
+- [-] 5. Checkpoint - Verify platform handlers work independently
   - Ensure all tests pass, ask the user if questions arise.
   - Test macOS handler on macOS (or with mocks)
   - Test Windows handler on Windows (or with mocks)

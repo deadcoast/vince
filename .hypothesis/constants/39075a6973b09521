@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/platform/windows.py
+# hypothesis_version: 6.148.8
+
+[134217728, '"', '*.exe', '.', '.exe', 'ProgId', 'VE603', 'VE604', 'VE605', 'win32']
