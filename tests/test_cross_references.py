@@ -901,10 +901,10 @@ class TestCommandReferenceValidation:
         tables_commands = extract_commands_from_tables(tables_path)
         
         # Known vince commands
-        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list"}
+        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list", "sync"}
         
         # Pattern to match command references in backticks
-        command_pattern = re.compile(r"`(slap|chop|set|forget|offer|reject|list)`")
+        command_pattern = re.compile(r"`(slap|chop|set|forget|offer|reject|list|sync)`")
         
         all_missing = []
         
@@ -988,7 +988,7 @@ class TestCommandReferenceValidation:
         api_content = api_path.read_text()
         command_section_pattern = re.compile(r"^###\s+(\w+)\s*$", re.MULTILINE)
         
-        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list"}
+        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list", "sync"}
         api_commands = set()
         
         for match in command_section_pattern.finditer(api_content):
@@ -1426,11 +1426,11 @@ class TestProperty3CrossReferenceIntegrity:
         all_sids = extract_all_sids_from_tables(tables_path)
         
         # Known commands that should be referenced correctly
-        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list"}
+        known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list", "sync"}
         
         # Check that referenced commands exist in tables.md
         content = doc_path.read_text()
-        command_pattern = re.compile(r"`(slap|chop|set|forget|offer|reject|list)`")
+        command_pattern = re.compile(r"`(slap|chop|set|forget|offer|reject|list|sync)`")
         
         tables_commands = extract_commands_from_tables(tables_path)
         

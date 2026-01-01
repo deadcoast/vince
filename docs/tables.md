@@ -63,6 +63,7 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | `offer` | of | of01 | Create a custom shortcut/alias |
 | `reject` | re | re01 | Remove a custom offer |
 | `list` | li | li01 | Display tracked assets and offers |
+| `sync` | sy | sy01 | Sync all active defaults to the OS |
 
 ## FILE_TYPES
 

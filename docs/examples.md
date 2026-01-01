@@ -282,6 +282,54 @@ vince list -def -vb
 vince list -off --verbose
 ```
 
+## `sync`
+
+Sync all active defaults to the operating system. This command applies all tracked defaults to the OS at once.
+
+### Basic Usage
+
+```sh
+# Sync all active defaults to the OS
+vince sync
+```
+
+### With Dry Run Flag
+
+```sh
+# Preview changes without applying them
+vince sync -dry
+```
+
+### With Verbose Output
+
+```sh
+# Sync with verbose output
+vince sync -vb
+
+# Sync with long verbose flag
+vince sync --verbose
+
+# Dry run with verbose output
+vince sync -dry -vb
+```
+
+### Multi-Step Workflow
+
+```sh
+# Step 1: Set up defaults
+vince slap /path/to/app -set --md
+vince slap /path/to/app -set --py
+
+# Step 2: Preview what will be synced
+vince sync -dry
+
+# Step 3: Apply all defaults to OS
+vince sync
+
+# Step 4: Verify with list
+vince list -def
+```
+
 ## Extension Flag Examples
 
 All 12 supported extensions with their flags:

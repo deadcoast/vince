@@ -468,9 +468,9 @@ class TestCommandHandlerIntegrationProperties:
         """
         runner = CliRunner()
 
-        # Create isolated data dir with active default
+        # Create isolated data dir with active default (use exist_ok=True for hypothesis reuse)
         data_dir = tmp_path / ".vince"
-        data_dir.mkdir()
+        data_dir.mkdir(exist_ok=True)
 
         ext = ext_flag.replace("--", ".")
         defaults_data = {
@@ -485,6 +485,7 @@ class TestCommandHandlerIntegrationProperties:
                 }
             ],
         }
+        # Reset data files for each hypothesis example
         (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
         (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
 
@@ -531,9 +532,9 @@ class TestCommandHandlerIntegrationProperties:
         """
         runner = CliRunner()
 
-        # Create isolated data dir with active default
+        # Create isolated data dir with active default (use exist_ok=True for hypothesis reuse)
         data_dir = tmp_path / ".vince"
-        data_dir.mkdir()
+        data_dir.mkdir(exist_ok=True)
 
         ext = ext_flag.replace("--", ".")
         defaults_data = {
@@ -548,6 +549,7 @@ class TestCommandHandlerIntegrationProperties:
                 }
             ],
         }
+        # Reset data files for each hypothesis example
         (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
         (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
 
@@ -596,12 +598,14 @@ class TestCommandHandlerIntegrationProperties:
 
         # Create mock executable
         exe = tmp_path / "mock_app"
-        exe.write_text("#!/bin/bash\necho 'mock'")
-        exe.chmod(0o755)
+        if not exe.exists():
+            exe.write_text("#!/bin/bash\necho 'mock'")
+            exe.chmod(0o755)
 
-        # Create isolated data dir
+        # Create isolated data dir (use exist_ok=True for hypothesis reuse)
         data_dir = tmp_path / ".vince"
-        data_dir.mkdir()
+        data_dir.mkdir(exist_ok=True)
+        # Reset data files for each hypothesis example
         (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
         (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
 

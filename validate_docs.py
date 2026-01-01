@@ -1742,7 +1742,7 @@ def extract_commands_from_api(api_path: Path) -> set[str]:
     command_section_pattern = re.compile(r"^###\s+(\w+)\s*$")
 
     # Known vince commands to filter out non-command sections
-    known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list"}
+    known_commands = {"slap", "chop", "set", "forget", "offer", "reject", "list", "sync"}
 
     in_code_block = False
 

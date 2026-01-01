@@ -145,7 +145,7 @@ uv lock --upgrade-package <package>
 
 ## Cross-References
 
-- [Project README](../.md) - Project root documentation
+- [Project README](../README.md) - Project root documentation
 - [Tables](tables.md) - Single Source of Truth for all definitions
 - [API](api.md) - Command function signatures and parameters
 - [Schemas](schemas.md) - Data structure definitions

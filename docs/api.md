@@ -83,6 +83,9 @@ def cmd_reject(...) -> None: ...
 @app.command(name="list")
 def cmd_list(...) -> None: ...
 
+@app.command(name="sync")
+def cmd_sync(...) -> None: ...
+
 # Entry point
 if __name__ == "__main__":
     app()
@@ -589,6 +592,61 @@ Returns `None`. Output is displayed via Rich console as formatted tables.
 | `VE105` | Invalid subsection | Invalid list subsection: {section} |
 | `VE501` | Unexpected error | Unexpected error: {message} |
 
+---
+
+### sync
+
+Sync all active defaults to the operating system.
+
+#### Function Signature
+
+```python
+@app.command(name="sync")
+def cmd_sync(
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview changes without applying them to the OS",
+    ),
+    verbose: bool = Option(
+        False,
+        "-vb",
+        "--verbose",
+        help="Enable verbose output",
+    ),
+) -> None:
+    """Sync all active defaults to the OS."""
+    ...
+```
+
+#### Parameters
+
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `dry_run` | `bool` | `False` | If `True`, previews changes without applying them. |
+| `verbose` | `bool` | `False` | If `True`, enables detailed output. |
+
+#### Return Type
+
+Returns `None`. Output is displayed via Rich console.
+
+#### Semantics
+
+1. Loads all active defaults from the JSON store
+2. For each active default, checks if the OS default matches
+3. Skips entries that are already correctly configured
+4. Applies changes for out-of-sync entries
+5. Reports success/failure for each extension
+6. Continues processing remaining entries even if some fail
+
+#### Raised Exceptions
+
+| Error Code | Condition | Message |
+| --- | --- | --- |
+| `VE601` | Unsupported platform | Unsupported platform: {platform} |
+| `VE606` | Partial sync failure | Sync partially failed: {succeeded} succeeded, {failed} failed |
+| `VE501` | Unexpected error | Unexpected error: {message} |
+
 ## Common Patterns
 
 ### Error Handling Pattern
@@ -754,6 +812,19 @@ vince list -all
 
 # Filter by extension
 vince list -def --md
+```
+
+### Basic sync Usage
+
+```bash
+# Sync all active defaults to the OS
+vince sync
+
+# Preview changes without applying
+vince sync -dry
+
+# Sync with verbose output
+vince sync -vb
 ```
 
 ### Programmatic Usage
