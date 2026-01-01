@@ -148,13 +148,13 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 10: Mismatch Detection in List**
     - **Validates: Requirements 4.1, 4.3**
 
-- [ ] 9. Implement rollback support
-  - [ ] 9.1 Add rollback logic to platform handlers
+- [x] 9. Implement rollback support
+  - [x] 9.1 Add rollback logic to platform handlers
     - In `set_default()`, if operation fails after partial change, attempt restore
     - Log rollback attempts
     - Return compound error if rollback also fails
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
-  - [ ] 9.2 Write property test for rollback restoration
+  - [x] 9.2 Write property test for rollback restoration
     - **Property 5: Rollback on Failure**
     - **Validates: Requirements 9.1, 9.2**
 

@@ -437,3 +437,237 @@ class TestMacOSHandlerProperties:
         assert result1.success is True
         assert result2.success is True
         assert result1.message == result2.message
+
+
+# =============================================================================
+# Rollback Property Tests
+# =============================================================================
+
+
+class TestMacOSHandlerRollback:
+    """Tests for rollback functionality in MacOSHandler.
+
+    **Property 5: Rollback on Failure**
+    **Validates: Requirements 9.1, 9.2**
+    """
+
+    def test_rollback_attempted_on_duti_failure(self, tmp_path):
+        """
+        When duti fails after recording previous default, rollback should be attempted.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from subprocess import CalledProcessError
+
+        from vince.platform.macos import MacOSHandler
+
+        # Create mock app bundle
+        app_bundle = tmp_path / "Test.app"
+        contents = app_bundle / "Contents"
+        contents.mkdir(parents=True)
+
+        # Create a mock previous default app
+        prev_app = tmp_path / "Previous.app"
+        prev_contents = prev_app / "Contents"
+        prev_contents.mkdir(parents=True)
+
+        handler = MacOSHandler()
+
+        with patch("subprocess.run") as mock_run:
+            call_count = [0]
+
+            def mock_subprocess(*args, **kwargs):
+                call_count[0] += 1
+                cmd = args[0]
+
+                # First call: bundle ID extraction for Test.app
+                if "defaults" in cmd and "CFBundleIdentifier" in cmd:
+                    return MagicMock(returncode=0, stdout="com.test.app\n")
+
+                # Second call: duti -x (get current default)
+                if "duti" in cmd and "-x" in cmd:
+                    return MagicMock(
+                        returncode=0,
+                        stdout=f"{prev_app}\nPrevious\ncom.previous.app\n",
+                    )
+
+                # Third call: duti -s (set default) - FAIL
+                if "duti" in cmd and "-s" in cmd:
+                    raise CalledProcessError(1, cmd, stderr=b"duti error")
+
+                return MagicMock(returncode=0, stdout="")
+
+            mock_run.side_effect = mock_subprocess
+
+            result = handler.set_default(".md", app_bundle, dry_run=False)
+
+        # Operation should fail
+        assert result.success is False
+        # Previous default should be recorded
+        assert result.previous_default == str(prev_app)
+        # Rollback should have been attempted
+        assert result.rollback_attempted is True
+
+    def test_rollback_not_attempted_when_no_previous_default(self, tmp_path):
+        """
+        When there's no previous default, rollback should not be attempted.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from subprocess import CalledProcessError
+
+        from vince.platform.macos import MacOSHandler
+
+        # Create mock app bundle
+        app_bundle = tmp_path / "Test.app"
+        contents = app_bundle / "Contents"
+        contents.mkdir(parents=True)
+
+        handler = MacOSHandler()
+
+        with patch("subprocess.run") as mock_run:
+            def mock_subprocess(*args, **kwargs):
+                cmd = args[0]
+
+                # Bundle ID extraction
+                if "defaults" in cmd and "CFBundleIdentifier" in cmd:
+                    return MagicMock(returncode=0, stdout="com.test.app\n")
+
+                # duti -x (get current default) - no default
+                if "duti" in cmd and "-x" in cmd:
+                    return MagicMock(returncode=1, stdout="")
+
+                # duti -s (set default) - FAIL
+                if "duti" in cmd and "-s" in cmd:
+                    raise CalledProcessError(1, cmd, stderr=b"duti error")
+
+                return MagicMock(returncode=0, stdout="")
+
+            mock_run.side_effect = mock_subprocess
+
+            # Also mock the PyObjC fallback
+            with patch.object(handler, "_query_launch_services", return_value=None):
+                result = handler.set_default(".md", app_bundle, dry_run=False)
+
+        # Operation should fail
+        assert result.success is False
+        # No previous default
+        assert result.previous_default is None
+        # Rollback should not have been attempted (nothing to rollback to)
+        assert result.rollback_attempted is False
+
+    @given(extension=supported_extensions, bundle_id=bundle_id_strategy)
+    @settings(max_examples=100)
+    def test_rollback_records_previous_default_property(self, extension, bundle_id):
+        """
+        Property 5: Rollback on Failure
+
+        For any valid extension and application, if set_default fails after
+        recording a previous default, the result should include rollback
+        information.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        import tempfile
+        from subprocess import CalledProcessError
+
+        from vince.platform.macos import MacOSHandler
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Create mock app bundle
+            app_bundle = Path(tmp_dir) / "Test.app"
+            contents = app_bundle / "Contents"
+            contents.mkdir(parents=True, exist_ok=True)
+
+            # Create mock previous app
+            prev_app = Path(tmp_dir) / "Previous.app"
+            prev_contents = prev_app / "Contents"
+            prev_contents.mkdir(parents=True, exist_ok=True)
+
+            handler = MacOSHandler()
+
+            with patch("subprocess.run") as mock_run:
+                def mock_subprocess(*args, **kwargs):
+                    cmd = args[0]
+
+                    # Bundle ID extraction
+                    if "defaults" in cmd and "CFBundleIdentifier" in cmd:
+                        return MagicMock(returncode=0, stdout=f"{bundle_id}\n")
+
+                    # duti -x (get current default)
+                    if "duti" in cmd and "-x" in cmd:
+                        return MagicMock(
+                            returncode=0,
+                            stdout=f"{prev_app}\nPrevious\ncom.previous.app\n",
+                        )
+
+                    # duti -s (set default) - FAIL
+                    if "duti" in cmd and "-s" in cmd:
+                        raise CalledProcessError(1, cmd, stderr=b"duti error")
+
+                    return MagicMock(returncode=0, stdout="")
+
+                mock_run.side_effect = mock_subprocess
+
+                result = handler.set_default(extension, app_bundle, dry_run=False)
+
+            # Property: When operation fails with a previous default,
+            # the result should contain rollback information
+            assert result.success is False
+            assert result.previous_default is not None
+            assert result.rollback_attempted is True
+            # Rollback result should be recorded (success or failure)
+            assert result.rollback_succeeded is not None or result.rollback_message is not None
+
+    def test_rollback_result_includes_original_error(self, tmp_path):
+        """
+        When rollback is attempted, the result should include the original error.
+
+        **Validates: Requirements 9.3, 9.4**
+        """
+        from subprocess import CalledProcessError
+
+        from vince.platform.macos import MacOSHandler
+
+        # Create mock app bundle
+        app_bundle = tmp_path / "Test.app"
+        contents = app_bundle / "Contents"
+        contents.mkdir(parents=True)
+
+        # Create a mock previous default app
+        prev_app = tmp_path / "Previous.app"
+        prev_contents = prev_app / "Contents"
+        prev_contents.mkdir(parents=True)
+
+        handler = MacOSHandler()
+
+        with patch("subprocess.run") as mock_run:
+            def mock_subprocess(*args, **kwargs):
+                cmd = args[0]
+
+                # Bundle ID extraction
+                if "defaults" in cmd and "CFBundleIdentifier" in cmd:
+                    return MagicMock(returncode=0, stdout="com.test.app\n")
+
+                # duti -x (get current default)
+                if "duti" in cmd and "-x" in cmd:
+                    return MagicMock(
+                        returncode=0,
+                        stdout=f"{prev_app}\nPrevious\ncom.previous.app\n",
+                    )
+
+                # duti -s (set default) - FAIL with specific error
+                if "duti" in cmd and "-s" in cmd:
+                    raise CalledProcessError(
+                        1, cmd, stderr=b"specific duti error message"
+                    )
+
+                return MagicMock(returncode=0, stdout="")
+
+            mock_run.side_effect = mock_subprocess
+
+            result = handler.set_default(".md", app_bundle, dry_run=False)
+
+        # Original error should be preserved in the message
+        assert "duti failed" in result.message
+        assert result.error_code is not None

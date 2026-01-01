@@ -6,15 +6,19 @@ operations on Windows using:
 - ProgID entries for application registration
 - SHChangeNotify for shell notification
 
-Requirements: 3.1, 3.2, 3.3, 3.5, 4.1, 5.1, 5.3, 7.1, 7.2, 9.1
+Requirements: 3.1, 3.2, 3.3, 3.5, 4.1, 5.1, 5.3, 7.1, 7.2, 9.1, 9.2, 9.3, 9.4
 """
 
+import logging
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from vince.platform.base import AppInfo, OperationResult, Platform
 from vince.platform.errors import ApplicationNotFoundError
+
+# Set up logging for rollback operations
+logger = logging.getLogger(__name__)
 
 # Type hints for Windows-specific modules
 if TYPE_CHECKING:
@@ -199,6 +203,7 @@ class WindowsHandler:
 
         Creates a ProgID entry for the application and associates
         the extension with it. Records the previous default for rollback.
+        If the operation fails after partial changes, attempts rollback.
 
         Args:
             extension: File extension (e.g., ".md", ".py")
@@ -208,7 +213,7 @@ class WindowsHandler:
         Returns:
             OperationResult with success status and details
 
-        Requirements: 3.1, 3.2, 3.3, 3.5, 7.1, 7.2, 9.1
+        Requirements: 3.1, 3.2, 3.3, 3.5, 7.1, 7.2, 9.1, 9.2, 9.3, 9.4
         """
         app_info = self.verify_application(app_path)
         ext = extension if extension.startswith(".") else f".{extension}"
@@ -222,6 +227,8 @@ class WindowsHandler:
 
         # Record previous default for rollback (Requirement 9.1)
         previous = self.get_current_default(extension)
+        # Also record the previous ProgID for potential rollback
+        previous_prog_id = self._get_previous_prog_id(ext)
         prog_id = f"vince.{ext[1:]}"
 
         if dry_run:
@@ -231,12 +238,17 @@ class WindowsHandler:
                 previous_default=previous,
             )
 
+        prog_id_created = False
+        extension_associated = False
+
         try:
             # Create ProgID entry
             self._create_prog_id(prog_id, app_info)
+            prog_id_created = True
 
             # Associate extension with ProgID
             self._associate_extension(ext, prog_id)
+            extension_associated = True
 
             # Notify shell of change (Requirement 3.5)
             self._notify_shell()
@@ -247,25 +259,187 @@ class WindowsHandler:
                 previous_default=previous,
             )
         except PermissionError:
+            error_msg = "Registry access denied. Run as administrator."
+            # Attempt rollback if we made partial changes (Requirements 9.2, 9.3, 9.4)
+            if prog_id_created or extension_associated:
+                return self._attempt_rollback(
+                    ext, prog_id, previous, previous_prog_id,
+                    prog_id_created, extension_associated,
+                    error_msg, "VE603"
+                )
             return OperationResult(
                 success=False,
-                message="Registry access denied. Run as administrator.",
+                message=error_msg,
                 error_code="VE603",
                 previous_default=previous,
             )
         except ImportError as e:
+            error_msg = f"Windows registry not available: {e}"
             return OperationResult(
                 success=False,
-                message=f"Windows registry not available: {e}",
+                message=error_msg,
                 error_code="VE605",
                 previous_default=previous,
             )
         except Exception as e:
+            error_msg = f"Registry operation failed: {e}"
+            # Attempt rollback if we made partial changes (Requirements 9.2, 9.3, 9.4)
+            if prog_id_created or extension_associated:
+                return self._attempt_rollback(
+                    ext, prog_id, previous, previous_prog_id,
+                    prog_id_created, extension_associated,
+                    error_msg, "VE605"
+                )
             return OperationResult(
                 success=False,
-                message=f"Registry operation failed: {e}",
+                message=error_msg,
                 error_code="VE605",
                 previous_default=previous,
+            )
+
+    def _get_previous_prog_id(self, ext: str) -> Optional[str]:
+        """Get the current ProgID for an extension before modification.
+
+        Args:
+            ext: File extension (with leading dot)
+
+        Returns:
+            Current ProgID or None if not set
+        """
+        try:
+            winreg = _get_winreg()
+            key_path = f"Software\\Classes\\{ext}"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+                prog_id, _ = winreg.QueryValueEx(key, "")
+                return prog_id
+        except (ImportError, OSError):
+            return None
+
+    def _attempt_rollback(
+        self,
+        ext: str,
+        prog_id: str,
+        previous_default: Optional[str],
+        previous_prog_id: Optional[str],
+        prog_id_created: bool,
+        extension_associated: bool,
+        original_error: str,
+        original_error_code: str,
+    ) -> OperationResult:
+        """Attempt to rollback registry changes after a failure.
+
+        Args:
+            ext: File extension that was being modified
+            prog_id: The ProgID that was created
+            previous_default: The previous default application path
+            previous_prog_id: The previous ProgID for the extension
+            prog_id_created: Whether the ProgID was created
+            extension_associated: Whether the extension was associated
+            original_error: The error message from the failed operation
+            original_error_code: The error code from the failed operation
+
+        Returns:
+            OperationResult with rollback status information
+
+        Requirements: 9.2, 9.3, 9.4
+        """
+        logger.info(
+            f"Attempting rollback for {ext}: prog_id_created={prog_id_created}, "
+            f"extension_associated={extension_associated}"
+        )
+
+        rollback_errors = []
+
+        try:
+            winreg = _get_winreg()
+
+            # Remove the ProgID we created
+            if prog_id_created:
+                try:
+                    self._delete_key_recursive(
+                        winreg.HKEY_CURRENT_USER,
+                        f"Software\\Classes\\{prog_id}",
+                    )
+                    logger.info(f"Rollback: Removed ProgID {prog_id}")
+                except Exception as e:
+                    rollback_errors.append(f"Failed to remove ProgID: {e}")
+                    logger.error(f"Rollback: Failed to remove ProgID {prog_id}: {e}")
+
+            # Restore the previous extension association
+            if extension_associated:
+                try:
+                    if previous_prog_id:
+                        # Restore the previous ProgID association
+                        key_path = f"Software\\Classes\\{ext}"
+                        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+                            winreg.SetValueEx(key, "", 0, winreg.REG_SZ, previous_prog_id)
+                        logger.info(
+                            f"Rollback: Restored extension {ext} to ProgID {previous_prog_id}"
+                        )
+                    else:
+                        # No previous association, remove the extension key
+                        self._delete_key_recursive(
+                            winreg.HKEY_CURRENT_USER,
+                            f"Software\\Classes\\{ext}",
+                        )
+                        logger.info(f"Rollback: Removed extension association for {ext}")
+                except Exception as e:
+                    rollback_errors.append(f"Failed to restore extension: {e}")
+                    logger.error(f"Rollback: Failed to restore extension {ext}: {e}")
+
+            # Notify shell of changes
+            try:
+                self._notify_shell()
+            except Exception as e:
+                rollback_errors.append(f"Failed to notify shell: {e}")
+
+            if rollback_errors:
+                rollback_message = "; ".join(rollback_errors)
+                logger.error(f"Rollback partially failed for {ext}: {rollback_message}")
+                return OperationResult(
+                    success=False,
+                    message=original_error,
+                    error_code="VE607",
+                    previous_default=previous_default,
+                    rollback_attempted=True,
+                    rollback_succeeded=False,
+                    rollback_message=rollback_message,
+                )
+
+            logger.info(f"Rollback successful for {ext}")
+            return OperationResult(
+                success=False,
+                message=original_error,
+                error_code=original_error_code,
+                previous_default=previous_default,
+                rollback_attempted=True,
+                rollback_succeeded=True,
+                rollback_message="Successfully rolled back partial changes",
+            )
+
+        except ImportError as e:
+            rollback_error = f"Windows registry not available for rollback: {e}"
+            logger.error(f"Rollback failed for {ext}: {rollback_error}")
+            return OperationResult(
+                success=False,
+                message=original_error,
+                error_code="VE607",
+                previous_default=previous_default,
+                rollback_attempted=True,
+                rollback_succeeded=False,
+                rollback_message=rollback_error,
+            )
+        except Exception as e:
+            rollback_error = f"Rollback failed with unexpected error: {e}"
+            logger.error(f"Rollback failed for {ext}: {rollback_error}")
+            return OperationResult(
+                success=False,
+                message=original_error,
+                error_code="VE607",
+                previous_default=previous_default,
+                rollback_attempted=True,
+                rollback_succeeded=False,
+                rollback_message=rollback_error,
             )
 
     def _create_prog_id(self, prog_id: str, app_info: AppInfo) -> None:

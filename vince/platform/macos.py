@@ -6,9 +6,10 @@ operations on macOS using:
 - PyObjC Launch Services (fallback)
 - defaults command for bundle ID extraction
 
-Requirements: 2.1, 2.3, 2.4, 4.1, 5.1, 5.2, 7.1, 7.2, 9.1
+Requirements: 2.1, 2.3, 2.4, 4.1, 5.1, 5.2, 7.1, 7.2, 9.1, 9.2, 9.3, 9.4
 """
 
+import logging
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -16,6 +17,9 @@ from typing import Optional
 from vince.platform.base import AppInfo, OperationResult, Platform
 from vince.platform.errors import ApplicationNotFoundError, BundleIdNotFoundError
 from vince.platform.uti_map import extension_to_uti
+
+# Set up logging for rollback operations
+logger = logging.getLogger(__name__)
 
 
 class MacOSHandler:
@@ -200,6 +204,7 @@ class MacOSHandler:
 
         Records the previous default before making changes for rollback support.
         Tries duti first (more reliable), then falls back to PyObjC.
+        If the operation fails after partial changes, attempts rollback.
 
         Args:
             extension: File extension (e.g., ".md", ".py")
@@ -209,7 +214,7 @@ class MacOSHandler:
         Returns:
             OperationResult with success status and details
 
-        Requirements: 2.1, 2.4, 7.1, 7.2, 9.1
+        Requirements: 2.1, 2.4, 7.1, 7.2, 9.1, 9.2, 9.3, 9.4
         """
         app_info = self.verify_application(app_path)
         uti = extension_to_uti(extension)
@@ -248,13 +253,135 @@ class MacOSHandler:
             )
         except FileNotFoundError:
             # duti not installed, try PyObjC
-            return self._set_via_launch_services(app_info, uti, previous)
+            result = self._set_via_launch_services(app_info, uti, previous)
+            if not result.success and previous:
+                # Attempt rollback (Requirements 9.2, 9.3, 9.4)
+                return self._attempt_rollback(
+                    extension, uti, previous, result.message, result.error_code
+                )
+            return result
         except subprocess.CalledProcessError as e:
+            error_msg = f"duti failed: {e.stderr.decode() if e.stderr else 'unknown error'}"
+            # Attempt rollback if we have a previous default (Requirements 9.2, 9.3, 9.4)
+            if previous:
+                return self._attempt_rollback(
+                    extension, uti, previous, error_msg, "VE605"
+                )
             return OperationResult(
                 success=False,
-                message=f"duti failed: {e.stderr.decode() if e.stderr else 'unknown error'}",
+                message=error_msg,
                 error_code="VE605",
                 previous_default=previous,
+            )
+
+    def _attempt_rollback(
+        self,
+        extension: str,
+        uti: str,
+        previous_default: str,
+        original_error: str,
+        original_error_code: Optional[str],
+    ) -> OperationResult:
+        """Attempt to rollback to the previous default after a failure.
+
+        Args:
+            extension: File extension that was being modified
+            uti: UTI for the extension
+            previous_default: The previous default application path
+            original_error: The error message from the failed operation
+            original_error_code: The error code from the failed operation
+
+        Returns:
+            OperationResult with rollback status information
+
+        Requirements: 9.2, 9.3, 9.4
+        """
+        logger.info(
+            f"Attempting rollback for {extension} to previous default: {previous_default}"
+        )
+
+        try:
+            # Try to restore the previous default
+            # First, try to get the bundle ID of the previous default
+            previous_path = Path(previous_default)
+            if previous_path.exists():
+                try:
+                    previous_app_info = self.verify_application(previous_path)
+                    if previous_app_info.bundle_id:
+                        # Try duti first
+                        try:
+                            subprocess.run(
+                                ["duti", "-s", previous_app_info.bundle_id, uti, "all"],
+                                check=True,
+                                capture_output=True,
+                            )
+                            logger.info(
+                                f"Rollback successful for {extension} using duti"
+                            )
+                            return OperationResult(
+                                success=False,
+                                message=original_error,
+                                error_code=original_error_code,
+                                previous_default=previous_default,
+                                rollback_attempted=True,
+                                rollback_succeeded=True,
+                                rollback_message=f"Restored previous default: {previous_default}",
+                            )
+                        except (FileNotFoundError, subprocess.CalledProcessError):
+                            # Try PyObjC fallback for rollback
+                            rollback_result = self._set_via_launch_services(
+                                previous_app_info, uti, None
+                            )
+                            if rollback_result.success:
+                                logger.info(
+                                    f"Rollback successful for {extension} using Launch Services"
+                                )
+                                return OperationResult(
+                                    success=False,
+                                    message=original_error,
+                                    error_code=original_error_code,
+                                    previous_default=previous_default,
+                                    rollback_attempted=True,
+                                    rollback_succeeded=True,
+                                    rollback_message=f"Restored previous default: {previous_default}",
+                                )
+                except Exception as e:
+                    rollback_error = f"Failed to restore previous default: {e}"
+                    logger.error(f"Rollback failed for {extension}: {rollback_error}")
+                    return OperationResult(
+                        success=False,
+                        message=original_error,
+                        error_code="VE607",
+                        previous_default=previous_default,
+                        rollback_attempted=True,
+                        rollback_succeeded=False,
+                        rollback_message=rollback_error,
+                    )
+
+            # Previous default path doesn't exist or couldn't be restored
+            rollback_error = f"Previous default not found or invalid: {previous_default}"
+            logger.warning(f"Rollback skipped for {extension}: {rollback_error}")
+            return OperationResult(
+                success=False,
+                message=original_error,
+                error_code=original_error_code,
+                previous_default=previous_default,
+                rollback_attempted=True,
+                rollback_succeeded=False,
+                rollback_message=rollback_error,
+            )
+
+        except Exception as e:
+            rollback_error = f"Rollback failed with unexpected error: {e}"
+            logger.error(f"Rollback failed for {extension}: {rollback_error}")
+            return OperationResult(
+                success=False,
+                message=original_error,
+                error_code="VE607",
+                previous_default=previous_default,
+                rollback_attempted=True,
+                rollback_succeeded=False,
+                rollback_message=rollback_error,
             )
 
     def _set_via_launch_services(

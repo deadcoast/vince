@@ -105,3 +105,32 @@ class SyncPartialError(VinceError):
             message=f"Sync partially failed: {succeeded} succeeded, {failed} failed",
             recovery=f"Failed extensions: {', '.join(failures)}",
         )
+
+
+class RollbackError(VinceError):
+    """VE607: Rollback operation failed.
+
+    Raised when an OS operation fails and the subsequent rollback
+    attempt also fails, leaving the system in an inconsistent state.
+    """
+
+    def __init__(
+        self,
+        original_error: str,
+        rollback_error: str,
+        extension: str,
+    ):
+        super().__init__(
+            code="VE607",
+            message=(
+                f"Operation failed and rollback also failed for {extension}. "
+                f"Original error: {original_error}. Rollback error: {rollback_error}"
+            ),
+            recovery=(
+                "System may be in inconsistent state. "
+                "Manually verify file associations and try again."
+            ),
+        )
+        self.original_error = original_error
+        self.rollback_error = rollback_error
+        self.extension = extension

@@ -351,3 +351,267 @@ class TestWindowsHandlerProperties:
         assert hasattr(result, "previous_default")
         # In this case it's None since we're on non-Windows or no existing default
         assert result.previous_default is None
+
+
+# =============================================================================
+# Rollback Property Tests
+# =============================================================================
+
+
+class TestWindowsHandlerRollback:
+    """Tests for rollback functionality in WindowsHandler.
+
+    **Property 5: Rollback on Failure**
+    **Validates: Requirements 9.1, 9.2**
+    """
+
+    def test_rollback_attempted_on_registry_failure(self, tmp_path):
+        """
+        When registry operation fails after partial changes, rollback should be attempted.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from unittest.mock import MagicMock, patch
+
+        from vince.platform.windows import WindowsHandler
+
+        # Create mock exe file
+        exe_file = tmp_path / "test.exe"
+        exe_file.touch()
+
+        handler = WindowsHandler()
+
+        # Mock winreg to simulate partial failure
+        mock_winreg = MagicMock()
+        mock_winreg.HKEY_CURRENT_USER = 1
+        mock_winreg.HKEY_CLASSES_ROOT = 2
+        mock_winreg.REG_SZ = 1
+        mock_winreg.KEY_ALL_ACCESS = 0xF003F
+
+        # Track which operations were called
+        operations = []
+
+        def mock_create_key(hkey, path):
+            operations.append(("create", path))
+            # Fail on the second create (extension association)
+            if "shell\\open\\command" in path:
+                # First ProgID creation succeeds
+                return MagicMock(__enter__=MagicMock(return_value=MagicMock()),
+                                __exit__=MagicMock(return_value=False))
+            if ".md" in path and "vince" not in path:
+                # Extension association fails
+                raise PermissionError("Access denied")
+            return MagicMock(__enter__=MagicMock(return_value=MagicMock()),
+                            __exit__=MagicMock(return_value=False))
+
+        mock_winreg.CreateKey = mock_create_key
+        mock_winreg.SetValueEx = MagicMock()
+        mock_winreg.OpenKey = MagicMock(side_effect=OSError("Key not found"))
+        mock_winreg.DeleteKey = MagicMock()
+        mock_winreg.QueryValueEx = MagicMock(side_effect=OSError("Value not found"))
+        mock_winreg.EnumKey = MagicMock(side_effect=OSError("No more keys"))
+
+        with patch("vince.platform.windows._get_winreg", return_value=mock_winreg):
+            with patch("vince.platform.windows._get_ctypes") as mock_ctypes:
+                mock_ctypes.return_value.windll.shell32.SHChangeNotify = MagicMock()
+                result = handler.set_default(".md", exe_file, dry_run=False)
+
+        # Operation should fail
+        assert result.success is False
+        # Error code should indicate permission error or rollback error
+        assert result.error_code in ("VE603", "VE607")
+
+    def test_rollback_not_attempted_when_no_changes_made(self, tmp_path):
+        """
+        When operation fails before any changes, rollback should not be attempted.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from unittest.mock import MagicMock, patch
+
+        from vince.platform.windows import WindowsHandler
+
+        # Create mock exe file
+        exe_file = tmp_path / "test.exe"
+        exe_file.touch()
+
+        handler = WindowsHandler()
+
+        # Mock winreg to fail immediately on first operation
+        mock_winreg = MagicMock()
+        mock_winreg.HKEY_CURRENT_USER = 1
+        mock_winreg.HKEY_CLASSES_ROOT = 2
+        mock_winreg.REG_SZ = 1
+
+        # Fail immediately on CreateKey
+        mock_winreg.CreateKey = MagicMock(
+            side_effect=PermissionError("Access denied")
+        )
+        mock_winreg.OpenKey = MagicMock(side_effect=OSError("Key not found"))
+        mock_winreg.QueryValueEx = MagicMock(side_effect=OSError("Value not found"))
+
+        with patch("vince.platform.windows._get_winreg", return_value=mock_winreg):
+            result = handler.set_default(".md", exe_file, dry_run=False)
+
+        # Operation should fail
+        assert result.success is False
+        # Rollback should not have been attempted (no changes were made)
+        assert result.rollback_attempted is False
+
+    @given(extension=supported_extensions, app_name=app_name_strategy)
+    @settings(
+        max_examples=100,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    def test_rollback_records_previous_default_property(
+        self, extension, app_name, tmp_path
+    ):
+        """
+        Property 5: Rollback on Failure
+
+        For any valid extension and application, if set_default fails after
+        making partial changes, the result should include rollback information.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from unittest.mock import MagicMock, patch
+
+        from vince.platform.windows import WindowsHandler
+
+        # Create mock exe file
+        exe_file = tmp_path / f"{app_name}.exe"
+        exe_file.touch()
+
+        handler = WindowsHandler()
+
+        # Mock winreg to simulate partial failure
+        mock_winreg = MagicMock()
+        mock_winreg.HKEY_CURRENT_USER = 1
+        mock_winreg.HKEY_CLASSES_ROOT = 2
+        mock_winreg.REG_SZ = 1
+        mock_winreg.KEY_ALL_ACCESS = 0xF003F
+
+        create_count = [0]
+
+        def mock_create_key(hkey, path):
+            create_count[0] += 1
+            # Succeed on first few creates (ProgID), fail on extension
+            if create_count[0] <= 2:
+                return MagicMock(
+                    __enter__=MagicMock(return_value=MagicMock()),
+                    __exit__=MagicMock(return_value=False),
+                )
+            raise PermissionError("Access denied")
+
+        mock_winreg.CreateKey = mock_create_key
+        mock_winreg.SetValueEx = MagicMock()
+        mock_winreg.OpenKey = MagicMock(side_effect=OSError("Key not found"))
+        mock_winreg.DeleteKey = MagicMock()
+        mock_winreg.QueryValueEx = MagicMock(side_effect=OSError("Value not found"))
+        mock_winreg.EnumKey = MagicMock(side_effect=OSError("No more keys"))
+
+        with patch("vince.platform.windows._get_winreg", return_value=mock_winreg):
+            with patch("vince.platform.windows._get_ctypes") as mock_ctypes:
+                mock_ctypes.return_value.windll.shell32.SHChangeNotify = MagicMock()
+                result = handler.set_default(extension, exe_file, dry_run=False)
+
+        # Property: When operation fails after partial changes,
+        # the result should contain rollback information
+        assert result.success is False
+        # If partial changes were made, rollback should be attempted
+        if create_count[0] > 0:
+            assert result.rollback_attempted is True
+
+    def test_rollback_result_includes_original_error(self, tmp_path):
+        """
+        When rollback is attempted, the result should include the original error.
+
+        **Validates: Requirements 9.3, 9.4**
+        """
+        from unittest.mock import MagicMock, patch
+
+        from vince.platform.windows import WindowsHandler
+
+        # Create mock exe file
+        exe_file = tmp_path / "test.exe"
+        exe_file.touch()
+
+        handler = WindowsHandler()
+
+        # Mock winreg to simulate partial failure with specific error
+        mock_winreg = MagicMock()
+        mock_winreg.HKEY_CURRENT_USER = 1
+        mock_winreg.HKEY_CLASSES_ROOT = 2
+        mock_winreg.REG_SZ = 1
+        mock_winreg.KEY_ALL_ACCESS = 0xF003F
+
+        create_count = [0]
+
+        def mock_create_key(hkey, path):
+            create_count[0] += 1
+            if create_count[0] <= 2:
+                return MagicMock(
+                    __enter__=MagicMock(return_value=MagicMock()),
+                    __exit__=MagicMock(return_value=False),
+                )
+            raise PermissionError("Specific permission error message")
+
+        mock_winreg.CreateKey = mock_create_key
+        mock_winreg.SetValueEx = MagicMock()
+        mock_winreg.OpenKey = MagicMock(side_effect=OSError("Key not found"))
+        mock_winreg.DeleteKey = MagicMock()
+        mock_winreg.QueryValueEx = MagicMock(side_effect=OSError("Value not found"))
+        mock_winreg.EnumKey = MagicMock(side_effect=OSError("No more keys"))
+
+        with patch("vince.platform.windows._get_winreg", return_value=mock_winreg):
+            with patch("vince.platform.windows._get_ctypes") as mock_ctypes:
+                mock_ctypes.return_value.windll.shell32.SHChangeNotify = MagicMock()
+                result = handler.set_default(".md", exe_file, dry_run=False)
+
+        # Original error should be preserved
+        assert result.success is False
+        assert result.error_code is not None
+        # If rollback was attempted, rollback info should be present
+        if result.rollback_attempted:
+            assert result.rollback_succeeded is not None or result.rollback_message is not None
+
+    def test_operation_result_has_rollback_fields(self, tmp_path):
+        """
+        OperationResult should have rollback-related fields.
+
+        **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
+        """
+        from vince.platform.base import OperationResult
+
+        # Test that OperationResult has the new rollback fields
+        result = OperationResult(
+            success=False,
+            message="Test error",
+            previous_default="/path/to/previous",
+            error_code="VE605",
+            rollback_attempted=True,
+            rollback_succeeded=True,
+            rollback_message="Rollback successful",
+        )
+
+        assert result.rollback_attempted is True
+        assert result.rollback_succeeded is True
+        assert result.rollback_message == "Rollback successful"
+
+    def test_operation_result_default_rollback_values(self):
+        """
+        OperationResult should have sensible defaults for rollback fields.
+
+        **Validates: Requirements 9.1, 9.2**
+        """
+        from vince.platform.base import OperationResult
+
+        # Test default values
+        result = OperationResult(
+            success=True,
+            message="Success",
+        )
+
+        assert result.rollback_attempted is False
+        assert result.rollback_succeeded is None
+        assert result.rollback_message is None

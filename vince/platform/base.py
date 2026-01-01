@@ -56,12 +56,18 @@ class OperationResult:
         message: Human-readable result message
         previous_default: The default before this operation (for rollback)
         error_code: Error code if operation failed (VE6xx series)
+        rollback_attempted: Whether a rollback was attempted after failure
+        rollback_succeeded: Whether the rollback succeeded (None if not attempted)
+        rollback_message: Details about the rollback attempt
     """
 
     success: bool
     message: str
     previous_default: Optional[str] = None
     error_code: Optional[str] = None
+    rollback_attempted: bool = False
+    rollback_succeeded: Optional[bool] = None
+    rollback_message: Optional[str] = None
 
 
 @runtime_checkable
