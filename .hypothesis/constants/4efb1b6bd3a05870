@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/platform/base.py
+# hypothesis_version: 6.148.8
+
+['darwin', 'unsupported', 'win32']
