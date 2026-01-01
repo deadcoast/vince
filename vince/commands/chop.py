@@ -2,6 +2,10 @@
 
 The chop command removes a file extension association.
 It can transition an active default to removed state (with -forget).
+
+OS Integration:
+When -forget is used, the command also removes the OS association via
+the platform handler. If the OS operation fails, a warning is shown.
 """
 
 from typing import Optional
@@ -10,7 +14,7 @@ from typer import Option
 
 from vince.config import get_config, get_data_dir
 from vince.errors import NoDefaultError, VinceError, handle_error
-from vince.output.messages import print_info, print_success
+from vince.output.messages import print_info, print_success, print_warning
 from vince.persistence.defaults import DefaultsStore
 from vince.state.default_state import DefaultState, validate_transition
 from vince.validation.extension import validate_extension
@@ -34,6 +38,11 @@ def cmd_chop(
         "-forget",
         help="Forget the default (transition to removed state)",
     ),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview changes without applying them to the OS",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -43,7 +52,7 @@ def cmd_chop(
 ) -> None:
     """Remove a file extension association.
 
-    With -forget: Transitions the default state to removed.
+    With -forget: Transitions the default state to removed and removes OS association.
     Without -forget: Shows current default info (no state change).
     """
     try:
@@ -127,6 +136,45 @@ def cmd_chop(
                     target_state.value,
                     backup_enabled=backup_enabled,
                     max_backups=max_backups,
+                )
+
+            # Remove OS association via platform handler
+            try:
+                from vince.platform import get_handler, get_platform, Platform
+                from vince.platform.errors import UnsupportedPlatformError
+
+                platform = get_platform()
+                if platform != Platform.UNSUPPORTED:
+                    handler = get_handler()
+
+                    if dry_run:
+                        # Show what would happen
+                        result = handler.remove_default(ext, dry_run=True)
+                        print_info(f"[dry run] {result.message}")
+                        if result.previous_default:
+                            print_info(
+                                f"[dry run] Previous OS default: {result.previous_default}"
+                            )
+                    else:
+                        # Actually remove the association
+                        result = handler.remove_default(ext, dry_run=False)
+                        if result.success:
+                            if verbose:
+                                print_info(f"OS association removed: {result.message}")
+                        else:
+                            print_warning(
+                                f"OS operation failed: {result.message}. "
+                                "OS association may still be active."
+                            )
+                else:
+                    if verbose:
+                        print_info("OS integration not available on this platform")
+            except UnsupportedPlatformError:
+                if verbose:
+                    print_info("OS integration not available on this platform")
+            except Exception as e:
+                print_warning(
+                    f"OS operation failed: {e}. OS association may still be active."
                 )
 
             print_success(f"Default removed for [extension]{ext}[/]")

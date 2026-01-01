@@ -173,3 +173,49 @@ class DefaultsStore:
             if entry["id"] == entry_id:
                 return entry
         return None
+
+    def update_os_sync_status(
+        self,
+        entry_id: str,
+        os_synced: bool,
+        previous_os_default: Optional[str] = None,
+        backup_enabled: bool = True,
+        max_backups: int = 5,
+    ) -> Optional[Dict[str, Any]]:
+        """Update the OS sync status of a default entry.
+
+        Args:
+            entry_id: Unique identifier of the entry to update
+            os_synced: Whether the OS has been configured
+            previous_os_default: The OS default before vince changed it
+            backup_enabled: Whether to create backup before write
+            max_backups: Maximum number of backups to retain
+
+        Returns:
+            Updated entry dictionary if found, None otherwise
+
+        Requirements: 9.1
+        """
+        data = self.load()
+
+        for entry in data["defaults"]:
+            if entry["id"] == entry_id:
+                entry["os_synced"] = os_synced
+                if os_synced:
+                    entry["os_synced_at"] = datetime.now(timezone.utc).isoformat()
+                if previous_os_default is not None:
+                    entry["previous_os_default"] = previous_os_default
+                entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self.save(data, backup_enabled, max_backups)
+                return entry
+
+        return None
+
+    def find_active_defaults(self) -> List[Dict[str, Any]]:
+        """Get all active default entries.
+
+        Returns:
+            List of default entries with state "active"
+        """
+        data = self.load()
+        return [entry for entry in data["defaults"] if entry["state"] == "active"]

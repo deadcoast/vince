@@ -91,29 +91,29 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 3: Set-Query Round Trip (Windows)**
     - **Validates: Requirements 3.1, 3.5**
 
-- [-] 5. Checkpoint - Verify platform handlers work independently
+- [ ] 5. Checkpoint - Verify platform handlers work independently
   - Ensure all tests pass, ask the user if questions arise.
   - Test macOS handler on macOS (or with mocks)
   - Test Windows handler on Windows (or with mocks)
 
-- [ ] 6. Integrate with existing commands
-  - [ ] 6.1 Update `vince/commands/slap.py` to call platform handler
+- [x] 6. Integrate with existing commands
+  - [x] 6.1 Update `vince/commands/slap.py` to call platform handler
     - Import and call `get_handler().set_default()` after JSON update
     - Handle OS operation failure with warning
     - Add `-dry` flag support
     - Update `os_synced` and `previous_os_default` fields
     - _Requirements: 10.1, 10.5_
-  - [ ] 6.2 Update `vince/commands/set_cmd.py` to call platform handler
+  - [x] 6.2 Update `vince/commands/set_cmd.py` to call platform handler
     - Same integration pattern as slap
     - _Requirements: 10.3_
-  - [ ] 6.3 Update `vince/commands/chop.py` to call platform handler
+  - [x] 6.3 Update `vince/commands/chop.py` to call platform handler
     - Call `get_handler().remove_default()` after JSON update
     - Handle OS operation failure with warning
     - _Requirements: 10.2_
-  - [ ] 6.4 Update `vince/commands/forget.py` to call platform handler
+  - [x] 6.4 Update `vince/commands/forget.py` to call platform handler
     - Same integration pattern as chop
     - _Requirements: 10.4_
-  - [ ] 6.5 Write property test for command-handler integration
+  - [x] 6.5 Write property test for command-handler integration
     - **Property 7: Command Integration Calls Handler**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 

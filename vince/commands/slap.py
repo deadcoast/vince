@@ -3,6 +3,11 @@
 The slap command sets an application as the default for a file extension.
 It can create a pending default (without -set) or an active default (with -set).
 When -set is used, an offer is also auto-created.
+
+OS Integration:
+When -set is used, the command also applies the change to the OS via the
+platform handler. If the OS operation fails, a warning is shown and the
+user is advised to run `sync` later.
 """
 
 from pathlib import Path
@@ -12,7 +17,7 @@ from typer import Argument, Option
 
 from vince.config import get_config, get_data_dir
 from vince.errors import VinceError, handle_error
-from vince.output.messages import print_info, print_success
+from vince.output.messages import print_info, print_success, print_warning
 from vince.persistence.defaults import DefaultsStore
 from vince.persistence.offers import OffersStore
 from vince.state.default_state import DefaultState, validate_transition
@@ -45,6 +50,11 @@ def cmd_slap(
         False,
         "-set",
         help="Set as default immediately (creates active state and auto-creates offer)",
+    ),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview changes without applying them to the OS",
     ),
     verbose: bool = Option(
         False,
@@ -158,6 +168,59 @@ def cmd_slap(
                 print_success(f"Offer created: [offer]{offer_id}[/]")
             elif verbose:
                 print_info(f"Offer [offer]{offer_id}[/] already exists")
+
+            # Apply OS change via platform handler
+            os_synced = False
+            previous_os_default = None
+            try:
+                from vince.platform import get_handler, get_platform, Platform
+                from vince.platform.errors import UnsupportedPlatformError
+
+                platform = get_platform()
+                if platform != Platform.UNSUPPORTED:
+                    handler = get_handler()
+
+                    if dry_run:
+                        # Show what would happen
+                        result = handler.set_default(ext, validated_path, dry_run=True)
+                        print_info(f"[dry run] {result.message}")
+                        if result.previous_default:
+                            print_info(
+                                f"[dry run] Previous OS default: {result.previous_default}"
+                            )
+                    else:
+                        # Actually apply the change
+                        result = handler.set_default(ext, validated_path, dry_run=False)
+                        if result.success:
+                            os_synced = True
+                            previous_os_default = result.previous_default
+                            if verbose:
+                                print_info(f"OS default updated: {result.message}")
+                        else:
+                            print_warning(
+                                f"OS operation failed: {result.message}. "
+                                "Run `vince sync` to retry."
+                            )
+                else:
+                    if verbose:
+                        print_info("OS integration not available on this platform")
+            except UnsupportedPlatformError:
+                if verbose:
+                    print_info("OS integration not available on this platform")
+            except Exception as e:
+                print_warning(
+                    f"OS operation failed: {e}. Run `vince sync` to retry."
+                )
+
+            # Update entry with OS sync status (if not dry run)
+            if not dry_run:
+                defaults_store.update_os_sync_status(
+                    entry["id"],
+                    os_synced=os_synced,
+                    previous_os_default=previous_os_default,
+                    backup_enabled=backup_enabled,
+                    max_backups=max_backups,
+                )
 
         # Print success message
         action = "set" if set_default else "identified"

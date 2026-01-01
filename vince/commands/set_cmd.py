@@ -2,6 +2,11 @@
 
 The set command directly sets a default for a file extension.
 It creates an active default entry immediately (unlike slap without -set).
+
+OS Integration:
+The command also applies the change to the OS via the platform handler.
+If the OS operation fails, a warning is shown and the user is advised
+to run `sync` later.
 """
 
 from pathlib import Path
@@ -11,7 +16,7 @@ from typer import Argument, Option
 
 from vince.config import get_config, get_data_dir
 from vince.errors import VinceError, handle_error
-from vince.output.messages import print_info, print_success
+from vince.output.messages import print_info, print_success, print_warning
 from vince.persistence.defaults import DefaultsStore
 from vince.state.default_state import DefaultState, validate_transition
 from vince.validation.extension import validate_extension
@@ -39,6 +44,11 @@ def cmd_set(
     xml: bool = Option(False, "--xml", help="Target .xml files"),
     csv: bool = Option(False, "--csv", help="Target .csv files"),
     sql: bool = Option(False, "--sql", help="Target .sql files"),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview changes without applying them to the OS",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -50,6 +60,8 @@ def cmd_set(
 
     Creates an active default entry immediately.
     Raises error if default already exists for the extension.
+
+    Also applies the change to the OS via the platform handler.
     """
     try:
         # Load configuration
@@ -127,6 +139,59 @@ def cmd_set(
                 application_path=str(validated_path),
                 state=target_state.value,
                 application_name=validated_path.stem,
+                backup_enabled=backup_enabled,
+                max_backups=max_backups,
+            )
+
+        # Apply OS change via platform handler
+        os_synced = False
+        previous_os_default = None
+        try:
+            from vince.platform import get_handler, get_platform, Platform
+            from vince.platform.errors import UnsupportedPlatformError
+
+            platform = get_platform()
+            if platform != Platform.UNSUPPORTED:
+                handler = get_handler()
+
+                if dry_run:
+                    # Show what would happen
+                    result = handler.set_default(ext, validated_path, dry_run=True)
+                    print_info(f"[dry run] {result.message}")
+                    if result.previous_default:
+                        print_info(
+                            f"[dry run] Previous OS default: {result.previous_default}"
+                        )
+                else:
+                    # Actually apply the change
+                    result = handler.set_default(ext, validated_path, dry_run=False)
+                    if result.success:
+                        os_synced = True
+                        previous_os_default = result.previous_default
+                        if verbose:
+                            print_info(f"OS default updated: {result.message}")
+                    else:
+                        print_warning(
+                            f"OS operation failed: {result.message}. "
+                            "Run `vince sync` to retry."
+                        )
+            else:
+                if verbose:
+                    print_info("OS integration not available on this platform")
+        except UnsupportedPlatformError:
+            if verbose:
+                print_info("OS integration not available on this platform")
+        except Exception as e:
+            print_warning(
+                f"OS operation failed: {e}. Run `vince sync` to retry."
+            )
+
+        # Update entry with OS sync status (if not dry run)
+        if not dry_run:
+            defaults_store.update_os_sync_status(
+                entry["id"],
+                os_synced=os_synced,
+                previous_os_default=previous_os_default,
                 backup_enabled=backup_enabled,
                 max_backups=max_backups,
             )
