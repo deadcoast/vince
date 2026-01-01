@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/platform/__init__.py
+# hypothesis_version: 6.148.8
+
+['AppInfo', 'OperationResult', 'Platform', 'PlatformHandler', 'UTI_MAP', 'darwin', 'extension_to_uti', 'get_all_utis', 'get_handler', 'get_platform', 'uti_to_extension', 'win32']

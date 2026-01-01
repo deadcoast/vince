@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/platform/uti_map.py
+# hypothesis_version: 6.148.8
+
+['.', '.css', '.csv', '.htm', '.html', '.js', '.json', '.markdown', '.md', '.py', '.sql', '.txt', '.xml', '.yaml', '.yml', 'public.css', 'public.html', 'public.json', 'public.plain-text', 'public.python-script', 'public.sql', 'public.xml', 'public.yaml']

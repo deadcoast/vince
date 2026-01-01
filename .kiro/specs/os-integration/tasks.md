@@ -30,37 +30,37 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - Test error classes have correct codes and messages
     - _Requirements: 1.1, 1.2, 8.3_
 
-- [ ] 2. Implement UTI mapping for macOS
-  - [ ] 2.1 Create `vince/platform/uti_map.py` with extension-to-UTI mapping
+- [x] 2. Implement UTI mapping for macOS
+  - [x] 2.1 Create `vince/platform/uti_map.py` with extension-to-UTI mapping
     - Define UTI_MAP dictionary for all 12 supported extensions
     - Implement `extension_to_uti()` function
     - Implement `uti_to_extension()` reverse lookup
     - _Requirements: 2.2, 2.5_
-  - [ ] 2.2 Write property test for UTI mapping completeness
+  - [x] 2.2 Write property test for UTI mapping completeness
     - **Property 2: UTI Mapping Completeness**
     - **Validates: Requirements 2.2, 2.5**
 
-- [ ] 3. Implement macOS handler
-  - [ ] 3.1 Create `vince/platform/macos.py` with MacOSHandler class
+- [x] 3. Implement macOS handler
+  - [x] 3.1 Create `vince/platform/macos.py` with MacOSHandler class
     - Implement `platform` property
     - Implement `verify_application()` for .app bundle validation
     - Implement `_get_bundle_id()` using defaults command
     - Implement `_find_app_bundle()` for executable-to-bundle resolution
     - _Requirements: 2.1, 2.3_
-  - [ ] 3.2 Implement `get_current_default()` for macOS
+  - [x] 3.2 Implement `get_current_default()` for macOS
     - Try duti first, fall back to Launch Services query
     - Handle duti not installed gracefully
     - _Requirements: 4.1_
-  - [ ] 3.3 Implement `set_default()` for macOS
+  - [x] 3.3 Implement `set_default()` for macOS
     - Record previous default before change
     - Try duti first, fall back to PyObjC
     - Support dry_run mode
     - _Requirements: 2.1, 2.4, 7.1, 7.2, 9.1_
-  - [ ] 3.4 Implement `remove_default()` for macOS
+  - [x] 3.4 Implement `remove_default()` for macOS
     - Reset Launch Services for UTI
     - Rebuild Launch Services database
     - _Requirements: 5.1, 5.2_
-  - [ ] 3.5 Write property test for macOS set-query round trip
+  - [x] 3.5 Write property test for macOS set-query round trip
     - **Property 3: Set-Query Round Trip (macOS)**
     - **Validates: Requirements 2.1, 2.4**
 

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/platform/macos.py
+# hypothesis_version: 6.148.8
+
+['-domain', '-kill', '-r', '-s', '-x', '.', '.app', 'CFBundleIdentifier', 'Contents', 'Info', 'LSHandlers', 'VE602', 'VE605', 'all', 'defaults', 'delete', 'duti', 'local', 'read', 'system', 'user']

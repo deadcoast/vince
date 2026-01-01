@@ -24,6 +24,13 @@ from vince.platform.base import (
     PlatformHandler,
 )
 from vince.platform.errors import UnsupportedPlatformError
+from vince.platform.uti_map import (
+    UTI_MAP,
+    extension_to_uti,
+    get_all_utis,
+    get_extensions_for_uti,
+    uti_to_extension,
+)
 
 __all__ = [
     "Platform",
@@ -32,6 +39,12 @@ __all__ = [
     "PlatformHandler",
     "get_platform",
     "get_handler",
+    # UTI mapping exports
+    "UTI_MAP",
+    "extension_to_uti",
+    "uti_to_extension",
+    "get_all_utis",
+    "get_extensions_for_uti",
 ]
 
 # Singleton handler instance
