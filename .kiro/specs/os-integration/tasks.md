@@ -133,18 +133,18 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 6: Sync Applies All Active Defaults**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
 
-- [-] 8. Update list command to show OS defaults
-  - [-] 8.1 Update `vince/commands/list_cmd.py` to query OS defaults
+- [x] 8. Update list command to show OS defaults
+  - [x] 8.1 Update `vince/commands/list_cmd.py` to query OS defaults
     - For `-def` flag, call `get_handler().get_current_default()` for each entry
     - Add "OS Default" column to table
     - Add mismatch indicator when vince != OS
     - Handle query failures gracefully (show "unknown")
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [-] 8.2 Update `vince/output/tables.py` with new column
+  - [x] 8.2 Update `vince/output/tables.py` with new column
     - Add "OS Default" column to defaults table
     - Add warning style for mismatches
     - _Requirements: 4.2, 4.3_
-  - [ ] 8.3 Write property test for mismatch detection
+  - [x] 8.3 Write property test for mismatch detection
     - **Property 10: Mismatch Detection in List**
     - **Validates: Requirements 4.1, 4.3**
 

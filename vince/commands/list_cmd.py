@@ -206,12 +206,17 @@ def _get_extension_from_flags(
 def _display_defaults(
     defaults_store: DefaultsStore, ext_filter: Optional[str], verbose: bool
 ) -> None:
-    """Display defaults table.
+    """Display defaults table with OS default comparison.
+
+    For each default entry, queries the OS for the current default application
+    and displays both side-by-side with a mismatch indicator.
 
     Args:
         defaults_store: The defaults store to read from
         ext_filter: Optional extension to filter by
         verbose: Whether to show verbose output
+
+    Requirements: 4.1, 4.2, 4.3, 4.4
     """
     all_defaults = defaults_store.find_all()
 
@@ -226,11 +231,106 @@ def _display_defaults(
         print_warning("No defaults found")
         return
 
-    table = create_defaults_table(active_defaults)
+    # Query OS defaults for each extension
+    os_defaults = _query_os_defaults(active_defaults, verbose)
+
+    table = create_defaults_table(active_defaults, os_defaults)
     console.print(table)
 
     if verbose:
         print_info(f"Total defaults: {len(active_defaults)}")
+        # Count mismatches
+        mismatches = _count_mismatches(active_defaults, os_defaults)
+        if mismatches > 0:
+            print_warning(f"Mismatches detected: {mismatches}")
+
+
+def _query_os_defaults(
+    defaults: list, verbose: bool
+) -> Dict[str, Optional[str]]:
+    """Query OS for current default applications.
+
+    Args:
+        defaults: List of default entries to query
+        verbose: Whether to show verbose output
+
+    Returns:
+        Dict mapping extension to OS default path (None if query failed)
+
+    Requirements: 4.1, 4.4
+    """
+    os_defaults: Dict[str, Optional[str]] = {}
+
+    try:
+        from vince.platform import get_handler, get_platform, Platform
+
+        platform = get_platform()
+        if platform == Platform.UNSUPPORTED:
+            if verbose:
+                print_warning("OS integration not available on this platform")
+            # Return empty dict - all will show as "unknown"
+            return {d.get("extension", ""): None for d in defaults}
+
+        handler = get_handler()
+
+        for default in defaults:
+            extension = default.get("extension", "")
+            if extension in os_defaults:
+                continue  # Already queried
+
+            try:
+                os_default = handler.get_current_default(extension)
+                os_defaults[extension] = os_default
+                if verbose and os_default:
+                    print_info(f"OS default for {extension}: {os_default}")
+            except Exception as e:
+                # Handle query failures gracefully - show "unknown"
+                os_defaults[extension] = None
+                if verbose:
+                    print_warning(f"Could not query OS default for {extension}: {e}")
+
+    except ImportError:
+        # Platform module not available
+        if verbose:
+            print_warning("Platform module not available")
+        return {d.get("extension", ""): None for d in defaults}
+    except Exception as e:
+        # Any other error - return all as unknown
+        if verbose:
+            print_warning(f"Error querying OS defaults: {e}")
+        return {d.get("extension", ""): None for d in defaults}
+
+    return os_defaults
+
+
+def _count_mismatches(
+    defaults: list, os_defaults: Dict[str, Optional[str]]
+) -> int:
+    """Count number of mismatches between vince and OS defaults.
+
+    Args:
+        defaults: List of default entries
+        os_defaults: Dict mapping extension to OS default path
+
+    Returns:
+        Number of entries where vince default differs from OS default
+
+    Requirements: 4.3
+    """
+    mismatches = 0
+    for default in defaults:
+        extension = default.get("extension", "")
+        vince_path = default.get("application_path", "")
+        os_default = os_defaults.get(extension)
+
+        if os_default is not None:
+            # Normalize for comparison
+            vince_normalized = vince_path.rstrip("/\\")
+            os_normalized = os_default.rstrip("/\\")
+            if vince_normalized != os_normalized:
+                mismatches += 1
+
+    return mismatches
 
 
 def _display_offers(

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/output/tables.py
+# hypothesis_version: 6.148.8
+
+['/\\', '?', 'Application', 'Default ID', 'Defaults', 'Extension', 'OS Default', 'Offer ID', 'Offers', 'State', 'Sync', 'application_path', 'center', 'default_id', 'dim', 'extension', 'header', 'info', 'offer', 'offer_id', 'path', 'state', 'success', 'unknown', 'warning', '⚠', '✓']
