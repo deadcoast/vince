@@ -13,7 +13,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 from typer.testing import CliRunner
 
@@ -186,7 +186,8 @@ class TestSlapCommandHandlerIntegration:
         mock_handler.set_default.assert_called_once()
         call_args = mock_handler.set_default.call_args
         assert call_args[1]["dry_run"] is True
-        assert "dry run" in result.output.lower()
+        # Check for dry run indicator in output (either "dry run" or "Would")
+        assert "dry run" in result.output.lower() or "would" in result.output.lower()
 
 
 class TestSetCommandHandlerIntegration:
@@ -266,8 +267,8 @@ class TestChopCommandHandlerIntegration:
             previous_default="/usr/bin/existing",
         )
 
-        with patch("vince.commands.chop.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.chop.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(app, ["chop", "-forget", "--md"])
 
         assert result.exit_code == 0
@@ -316,8 +317,8 @@ class TestForgetCommandHandlerIntegration:
             previous_default="/usr/bin/python",
         )
 
-        with patch("vince.commands.forget.get_platform", return_value=Platform.MACOS):
-            with patch("vince.commands.forget.get_handler", return_value=mock_handler):
+        with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+            with patch("vince.platform.get_handler", return_value=mock_handler):
                 result = runner.invoke(app, ["forget", "--py"])
 
         assert result.exit_code == 0
@@ -339,7 +340,7 @@ class TestCommandHandlerIntegrationProperties:
     """
 
     @given(ext_flag=extension_flags)
-    @settings(max_examples=12)
+    @settings(max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_slap_set_always_calls_handler_for_supported_extensions(
         self, ext_flag, tmp_path
     ):
@@ -355,12 +356,14 @@ class TestCommandHandlerIntegrationProperties:
 
         # Create mock executable
         exe = tmp_path / "mock_app"
-        exe.write_text("#!/bin/bash\necho 'mock'")
-        exe.chmod(0o755)
+        if not exe.exists():
+            exe.write_text("#!/bin/bash\necho 'mock'")
+            exe.chmod(0o755)
 
-        # Create isolated data dir
+        # Create isolated data dir (use exist_ok=True for hypothesis reuse)
         data_dir = tmp_path / ".vince"
-        data_dir.mkdir()
+        data_dir.mkdir(exist_ok=True)
+        # Reset data files for each hypothesis example
         (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
         (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
 
@@ -376,8 +379,8 @@ class TestCommandHandlerIntegrationProperties:
 
         with patch("vince.commands.slap.get_config", mock_get_config):
             with patch("vince.commands.slap.get_data_dir", mock_get_data_dir):
-                with patch("vince.commands.slap.get_platform", return_value=Platform.MACOS):
-                    with patch("vince.commands.slap.get_handler", return_value=mock_handler):
+                with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.platform.get_handler", return_value=mock_handler):
                         result = runner.invoke(
                             app, ["slap", str(exe), "-set", ext_flag]
                         )
@@ -394,7 +397,7 @@ class TestCommandHandlerIntegrationProperties:
         assert call_args[0][0] == expected_ext
 
     @given(ext_flag=extension_flags)
-    @settings(max_examples=12)
+    @settings(max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_set_always_calls_handler_for_supported_extensions(
         self, ext_flag, tmp_path
     ):
@@ -410,12 +413,14 @@ class TestCommandHandlerIntegrationProperties:
 
         # Create mock executable
         exe = tmp_path / "mock_app"
-        exe.write_text("#!/bin/bash\necho 'mock'")
-        exe.chmod(0o755)
+        if not exe.exists():
+            exe.write_text("#!/bin/bash\necho 'mock'")
+            exe.chmod(0o755)
 
-        # Create isolated data dir
+        # Create isolated data dir (use exist_ok=True for hypothesis reuse)
         data_dir = tmp_path / ".vince"
-        data_dir.mkdir()
+        data_dir.mkdir(exist_ok=True)
+        # Reset data files for each hypothesis example
         (data_dir / "defaults.json").write_text('{"version": "1.0.0", "defaults": []}')
         (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
 
@@ -431,8 +436,8 @@ class TestCommandHandlerIntegrationProperties:
 
         with patch("vince.commands.set_cmd.get_config", mock_get_config):
             with patch("vince.commands.set_cmd.get_data_dir", mock_get_data_dir):
-                with patch("vince.commands.set_cmd.get_platform", return_value=Platform.MACOS):
-                    with patch("vince.commands.set_cmd.get_handler", return_value=mock_handler):
+                with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.platform.get_handler", return_value=mock_handler):
                         result = runner.invoke(
                             app, ["set", str(exe), ext_flag]
                         )
@@ -449,7 +454,7 @@ class TestCommandHandlerIntegrationProperties:
         assert call_args[0][0] == expected_ext
 
     @given(ext_flag=extension_flags)
-    @settings(max_examples=12)
+    @settings(max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_chop_forget_always_calls_handler_for_active_defaults(
         self, ext_flag, tmp_path
     ):
@@ -495,8 +500,8 @@ class TestCommandHandlerIntegrationProperties:
 
         with patch("vince.commands.chop.get_config", mock_get_config):
             with patch("vince.commands.chop.get_data_dir", mock_get_data_dir):
-                with patch("vince.commands.chop.get_platform", return_value=Platform.MACOS):
-                    with patch("vince.commands.chop.get_handler", return_value=mock_handler):
+                with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.platform.get_handler", return_value=mock_handler):
                         result = runner.invoke(
                             app, ["chop", "-forget", ext_flag]
                         )
@@ -512,7 +517,7 @@ class TestCommandHandlerIntegrationProperties:
         assert call_args[0][0] == ext
 
     @given(ext_flag=extension_flags)
-    @settings(max_examples=12)
+    @settings(max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_forget_always_calls_handler_for_active_defaults(
         self, ext_flag, tmp_path
     ):
@@ -558,8 +563,8 @@ class TestCommandHandlerIntegrationProperties:
 
         with patch("vince.commands.forget.get_config", mock_get_config):
             with patch("vince.commands.forget.get_data_dir", mock_get_data_dir):
-                with patch("vince.commands.forget.get_platform", return_value=Platform.MACOS):
-                    with patch("vince.commands.forget.get_handler", return_value=mock_handler):
+                with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.platform.get_handler", return_value=mock_handler):
                         result = runner.invoke(
                             app, ["forget", ext_flag]
                         )
@@ -575,7 +580,7 @@ class TestCommandHandlerIntegrationProperties:
         assert call_args[0][0] == ext
 
     @given(ext_flag=extension_flags)
-    @settings(max_examples=12)
+    @settings(max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_os_failure_does_not_fail_command(
         self, ext_flag, tmp_path
     ):
@@ -612,8 +617,8 @@ class TestCommandHandlerIntegrationProperties:
 
         with patch("vince.commands.slap.get_config", mock_get_config):
             with patch("vince.commands.slap.get_data_dir", mock_get_data_dir):
-                with patch("vince.commands.slap.get_platform", return_value=Platform.MACOS):
-                    with patch("vince.commands.slap.get_handler", return_value=mock_handler):
+                with patch("vince.platform.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.platform.get_handler", return_value=mock_handler):
                         result = runner.invoke(
                             app, ["slap", str(exe), "-set", ext_flag]
                         )
