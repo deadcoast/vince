@@ -14,6 +14,7 @@ from vince.commands.reject import cmd_reject
 from vince.commands.set_cmd import cmd_set
 # Import and register commands
 from vince.commands.slap import cmd_slap
+from vince.commands.sync import cmd_sync
 
 app = Typer(
     name="vince",
@@ -54,6 +55,7 @@ app.command(name="forget")(cmd_forget)
 app.command(name="offer")(cmd_offer)
 app.command(name="reject")(cmd_reject)
 app.command(name="list")(cmd_list)
+app.command(name="sync")(cmd_sync)
 
 
 if __name__ == "__main__":

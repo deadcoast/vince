@@ -117,8 +117,8 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 7: Command Integration Calls Handler**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
-- [ ] 7. Implement sync command
-  - [ ] 7.1 Create `vince/commands/sync.py` with cmd_sync function
+- [x] 7. Implement sync command
+  - [x] 7.1 Create `vince/commands/sync.py` with cmd_sync function
     - Load all active defaults from JSON store
     - For each, check if OS default matches
     - Skip already-synced entries
@@ -126,21 +126,21 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - Collect and report failures
     - Support dry_run mode
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 7.2 Register sync command in `vince/main.py`
+  - [x] 7.2 Register sync command in `vince/main.py`
     - Add `app.command(name="sync")(sync.cmd_sync)`
     - _Requirements: 6.1_
-  - [ ] 7.3 Write property test for sync completeness
+  - [x] 7.3 Write property test for sync completeness
     - **Property 6: Sync Applies All Active Defaults**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
 
-- [ ] 8. Update list command to show OS defaults
-  - [ ] 8.1 Update `vince/commands/list_cmd.py` to query OS defaults
+- [-] 8. Update list command to show OS defaults
+  - [-] 8.1 Update `vince/commands/list_cmd.py` to query OS defaults
     - For `-def` flag, call `get_handler().get_current_default()` for each entry
     - Add "OS Default" column to table
     - Add mismatch indicator when vince != OS
     - Handle query failures gracefully (show "unknown")
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 8.2 Update `vince/output/tables.py` with new column
+  - [-] 8.2 Update `vince/output/tables.py` with new column
     - Add "OS Default" column to defaults table
     - Add warning style for mismatches
     - _Requirements: 4.2, 4.3_

@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/commands/sync.py
+# hypothesis_version: 6.148.8
+
+['--verbose', '-dry', '-vb', '.app', 'application_path', 'backup_enabled', 'current platform', 'extension', 'id', 'max_backups', 'os_synced', 'verbose']

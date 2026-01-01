@@ -2,9 +2,11 @@
 
 The list command displays tracked assets and offers in Rich table format.
 It supports various subsections: -app, -cmd, -ext, -def, -off, -all.
+
+Requirements: 4.1, 4.2, 4.3, 4.4
 """
 
-from typing import Optional
+from typing import Dict, Optional
 
 from typer import Option
 
