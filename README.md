@@ -14,7 +14,7 @@ The CLI offers:
 
 ## Documentation
 
-For detailed documentation, see the [docs/](docs/) directory:
+For detailed documentation, see the [docs/](docs directory:
 
 - [Overview](docs/overview.md) - System design, commands, flags, and rules
 - [API](docs/api.md) - Python interface documentation for all CLI commands
