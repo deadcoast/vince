@@ -67,6 +67,15 @@ def extract_defaults_store_fields(defaults_py_path: Path) -> dict[str, dict]:
     if 'entry["updated_at"]' in content:
         fields["updated_at"] = {"required": False}
     
+    # OS sync fields have default values and are optional
+    # os_synced defaults to False, os_synced_at and previous_os_default are only set conditionally
+    if 'os_synced' in fields:
+        fields["os_synced"] = {"required": False}
+    if 'os_synced_at' in fields:
+        fields["os_synced_at"] = {"required": False}
+    if 'previous_os_default' in fields:
+        fields["previous_os_default"] = {"required": False}
+    
     return fields
 
 

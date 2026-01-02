@@ -366,7 +366,7 @@ class TestTablesCompleteness:
         """
         Property 8: Error categories should match code ranges.
         
-        VE1xx = Input, VE2xx = File, VE3xx = State, VE4xx = Config, VE5xx = System
+        VE1xx = Input, VE2xx = File, VE3xx = State, VE4xx = Config, VE5xx = System, VE6xx = OS
         
         **Validates: Requirements 8.3, 1.2**
         """
@@ -375,7 +375,8 @@ class TestTablesCompleteness:
             "2": "File",
             "3": "State",
             "4": "Config",
-            "5": "System"
+            "5": "System",
+            "6": "OS"
         }
         
         rows = parse_markdown_table(tables_content, "ERRORS")

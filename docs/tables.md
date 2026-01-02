@@ -149,6 +149,12 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | VE401 | ve401 | Config | Invalid config option: {key} | error |
 | VE402 | ve402 | Config | Config file malformed: {file} | error |
 | VE501 | ve501 | System | Unexpected error: {message} | error |
+| VE601 | ve601 | OS | Unsupported platform: {platform} | error |
+| VE602 | ve602 | OS | Cannot determine bundle ID for: {app_path} | error |
+| VE603 | ve603 | OS | Registry access denied: {operation} | error |
+| VE604 | ve604 | OS | Application not found or invalid: {app_path} | error |
+| VE605 | ve605 | OS | OS operation failed: {operation} - {details} | error |
+| VE606 | ve606 | OS | Sync partially failed: {succeeded} succeeded, {failed} failed | error |
 
 ## STATES
 

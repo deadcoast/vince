@@ -175,37 +175,37 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - Set default values for new fields
     - _Requirements: 9.1_
 
-- [ ] 12. Add dry run flag to all commands
-  - [ ] 12.1 Add `-dry` option to slap, set, chop, forget, sync commands
+- [x] 12. Add dry run flag to all commands
+  - [x] 12.1 Add `-dry` option to slap, set, chop, forget, sync commands
     - Pass dry_run parameter to platform handler
     - Display planned changes without executing
     - _Requirements: 7.1, 7.2, 7.3_
-  - [ ] 12.2 Write property test for dry run idempotence
+  - [x] 12.2 Write property test for dry run idempotence
     - **Property 4: Dry Run No Side Effects**
     - **Validates: Requirements 7.1, 7.2**
 
-- [ ] 13. Update documentation
-  - [ ] 13.1 Update `docs/overview.md` with OS integration section
+- [x] 13. Update documentation
+  - [x] 13.1 Update `docs/overview.md` with OS integration section
     - Document platform support (macOS, Windows)
     - Document sync command
     - Document dry run mode
     - Document new error codes VE601-VE606
     - _Requirements: All_
-  - [ ] 13.2 Update `docs/errors.md` with new error codes
+  - [x] 13.2 Update `docs/errors.md` with new error codes
     - Add VE6xx section for OS errors
     - Document each error with recovery actions
     - _Requirements: 8.3_
-  - [ ] 13.3 Update `docs/api.md` with new functions
+  - [x] 13.3 Update `docs/api.md` with new functions
     - Document platform module API
     - Document sync command
     - _Requirements: All_
-  - [ ] 13.4 Update `docs/examples.md` with OS integration examples
+  - [x] 13.4 Update `docs/examples.md` with OS integration examples
     - Add examples showing actual OS changes
     - Add sync command examples
     - Add dry run examples
     - _Requirements: All_
 
-- [ ] 14. Final checkpoint - Complete validation
+- [x] 14. Final checkpoint - Complete validation
   - Ensure all tests pass, ask the user if questions arise.
   - Run full test suite
   - Verify documentation is complete

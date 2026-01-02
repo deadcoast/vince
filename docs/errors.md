@@ -29,6 +29,7 @@ Errors are organized into five categories based on their source and nature:
 | VE3xx | State | sta | Invalid state transition errors - lifecycle violations |
 | VE4xx | Config | cfg | Configuration errors - invalid options, malformed config files |
 | VE5xx | System | sys | System-level errors - unexpected failures, resource issues |
+| VE6xx | OS | os | OS integration errors - platform operations, registry, Launch Services |
 
 ## Error Registry
 
@@ -81,6 +82,108 @@ System errors occur for unexpected failures.
 | Code | Class | Message Template | Severity | Recovery Action |
 |------|-------|-----------------|----------|-----------------|
 | VE501 | `UnexpectedError` | Unexpected error: {message} | error | Report issue with full error details to maintainers |
+
+### OS Integration Errors (VE6xx)
+
+OS integration errors occur during platform-specific file association operations.
+
+| Code | Class | Message Template | Severity | Recovery Action |
+|------|-------|-----------------|----------|-----------------|
+| VE601 | `UnsupportedPlatformError` | Unsupported platform: {platform} | error | vince supports macOS and Windows only |
+| VE602 | `BundleIdNotFoundError` | Cannot determine bundle ID for: {app_path} | error | Ensure the path points to a valid .app bundle |
+| VE603 | `RegistryAccessError` | Registry access denied: {operation} | error | Run vince as administrator or check permissions |
+| VE604 | `ApplicationNotFoundError` | Application not found or invalid: {app_path} | error | Verify the application path exists and is executable |
+| VE605 | `OSOperationError` | OS operation failed: {operation} - {details} | error | Check system logs for details |
+| VE606 | `SyncPartialError` | Sync partially failed: {succeeded} succeeded, {failed} failed | warning | Review failed extensions and retry individually |
+
+#### VE601: UnsupportedPlatformError
+
+Raised when vince is run on a platform that doesn't support OS-level file association changes.
+
+**Conditions**:
+- Running on Linux or other non-macOS/Windows platforms
+- Platform detection returns unsupported
+
+**Example**:
+```text
+✗ VE601: Unsupported platform: linux
+ℹ vince supports macOS and Windows only
+```
+
+#### VE602: BundleIdNotFoundError
+
+Raised on macOS when the application's bundle identifier cannot be determined.
+
+**Conditions**:
+- Application path doesn't point to a valid .app bundle
+- Info.plist is missing or malformed
+- CFBundleIdentifier is not set
+
+**Example**:
+```text
+✗ VE602: Cannot determine bundle ID for: /usr/local/bin/myapp
+ℹ Ensure the path points to a valid .app bundle
+```
+
+#### VE603: RegistryAccessError
+
+Raised on Windows when registry operations fail due to permissions.
+
+**Conditions**:
+- Insufficient permissions to modify HKEY_CURRENT_USER
+- Registry key is locked by another process
+- Group policy restrictions
+
+**Example**:
+```text
+✗ VE603: Registry access denied: set_default
+ℹ Run vince as administrator or check permissions
+```
+
+#### VE604: ApplicationNotFoundError
+
+Raised when the specified application cannot be found or is invalid.
+
+**Conditions**:
+- Application path doesn't exist
+- Path exists but is not an executable
+- On Windows: no .exe found in directory
+
+**Example**:
+```text
+✗ VE604: Application not found or invalid: /Applications/Missing.app
+ℹ Verify the application path exists and is executable
+```
+
+#### VE605: OSOperationError
+
+Generic error for OS operations that fail for reasons other than the specific cases above.
+
+**Conditions**:
+- Launch Services operation failed (macOS)
+- Shell notification failed (Windows)
+- duti command failed
+- PyObjC operation failed
+
+**Example**:
+```text
+✗ VE605: OS operation failed: set_default - Launch Services returned error code -10814
+ℹ Check system logs for details
+```
+
+#### VE606: SyncPartialError
+
+Raised when the sync command completes but some extensions failed to sync.
+
+**Conditions**:
+- At least one extension synced successfully
+- At least one extension failed to sync
+
+**Example**:
+```text
+⚠ VE606: Sync partially failed: 3 succeeded, 2 failed
+ℹ Failed extensions: .py, .js
+```
 
 ## Error Class Hierarchy
 

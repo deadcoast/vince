@@ -1343,6 +1343,7 @@ def validate_error_catalog(content: str, filename: str) -> ValidationResult:
         "State": (300, 399),
         "Config": (400, 499),
         "System": (500, 599),
+        "OS": (600, 699),
     }
 
     lines = content.split("\n")
@@ -1356,7 +1357,8 @@ def validate_error_catalog(content: str, filename: str) -> ValidationResult:
 
     # Patterns
     error_code_pattern = re.compile(r"^VE(\d{3})$")
-    category_section_pattern = re.compile(r"^###\s+(\w+)\s+Errors", re.IGNORECASE)
+    # Match category headers like "### Input Errors" or "### OS Integration Errors"
+    category_section_pattern = re.compile(r"^###\s+(\w+)(?:\s+\w+)?\s+Errors", re.IGNORECASE)
 
     for line_num, line in enumerate(lines, 1):
         stripped = line.strip()

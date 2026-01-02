@@ -192,6 +192,135 @@ vince list -off
 vince list -all
 ```
 
+## OS Integration
+
+The vince CLI provides cross-platform OS integration to actually set file associations at the operating system level. This means when you set a default with vince, it configures your OS so that double-clicking a file opens it in your chosen application.
+
+### Platform Support
+
+| Platform | Status | Implementation |
+| --- | --- | --- |
+| macOS | ✓ Supported | Launch Services via duti or PyObjC |
+| Windows | ✓ Supported | Windows Registry (winreg) |
+| Linux | ✗ Not Supported | Future consideration |
+
+> [!NOTE]
+> On unsupported platforms, vince will raise error VE601. The JSON tracking still works, but OS-level changes are not applied.
+
+### macOS Integration
+
+On macOS, vince uses the Launch Services framework to set file associations:
+
+- **Primary method**: `duti` command-line tool (recommended, install via `brew install duti`)
+- **Fallback method**: PyObjC Launch Services bindings
+
+**UTI Mapping**: macOS uses Uniform Type Identifiers (UTIs) instead of file extensions. Vince automatically maps extensions to their corresponding UTIs:
+
+| Extension | UTI |
+| --- | --- |
+| `.md` | `net.daringfireball.markdown` |
+| `.py` | `public.python-script` |
+| `.txt` | `public.plain-text` |
+| `.js` | `com.netscape.javascript-source` |
+| `.html` | `public.html` |
+| `.css` | `public.css` |
+| `.json` | `public.json` |
+| `.yml`/`.yaml` | `public.yaml` |
+| `.xml` | `public.xml` |
+| `.csv` | `public.comma-separated-values-text` |
+| `.sql` | `public.sql` |
+
+### Windows Integration
+
+On Windows, vince modifies the Windows Registry to set file associations:
+
+- Creates ProgID entries in `HKEY_CURRENT_USER\Software\Classes`
+- Associates extensions with the ProgID
+- Notifies the shell of changes via `SHChangeNotify`
+
+> [!NOTE]
+> Windows file associations are set at the user level (HKEY_CURRENT_USER), so administrator privileges are not typically required.
+
+### Command: sync
+
+Sync all active defaults to the operating system at once.
+
+```sh
+# Sync all active defaults to the OS
+vince sync
+
+# Preview changes without applying them
+vince sync -dry
+
+# Sync with verbose output
+vince sync -vb
+```
+
+The `sync` command:
+1. Loads all active defaults from the JSON store
+2. Checks if each OS default matches the vince configuration
+3. Skips entries that are already correctly configured
+4. Applies changes for out-of-sync entries
+5. Reports success/failure for each extension
+
+### Dry Run Mode
+
+All OS-modifying commands support a `-dry` flag to preview changes without applying them:
+
+```sh
+# Preview slap changes
+vince slap /path/to/app -set --md -dry
+
+# Preview chop changes
+vince chop -forget --md -dry
+
+# Preview sync changes
+vince sync -dry
+```
+
+**Dry run output shows**:
+- Extension being modified
+- Current OS default
+- Proposed new default
+- Required OS operations
+
+### OS Error Codes (VE6xx)
+
+OS integration introduces a new category of error codes:
+
+| Code | Name | Description |
+| --- | --- | --- |
+| VE601 | UnsupportedPlatformError | Platform not supported (not macOS or Windows) |
+| VE602 | BundleIdNotFoundError | Cannot determine macOS bundle ID for application |
+| VE603 | RegistryAccessError | Windows registry access denied |
+| VE604 | ApplicationNotFoundError | Application not found or invalid |
+| VE605 | OSOperationError | Generic OS operation failure |
+| VE606 | SyncPartialError | Sync completed with some failures |
+
+> [!NOTE]
+> For complete error details and recovery actions, see [errors.md](errors.md).
+
+### Automatic OS Integration
+
+When you use commands that modify defaults, vince automatically applies changes to the OS:
+
+| Command | OS Action |
+| --- | --- |
+| `slap -set` | Sets OS default for extension |
+| `set` | Sets OS default for extension |
+| `chop -forget` | Removes OS default for extension |
+| `forget` | Removes OS default for extension |
+
+If the OS operation fails but the JSON update succeeded, vince will warn you and suggest running `sync` to retry.
+
+### Rollback Support
+
+Vince records the previous OS default before making changes. If an operation fails after partial changes:
+
+1. Vince attempts to rollback to the previous state
+2. Rollback attempts are logged
+3. If rollback also fails, both errors are reported
+
 ## Flags
 
 Flags are organized into four categories: Utility, QOL (Quality of Life), List, and Extension.

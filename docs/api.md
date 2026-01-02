@@ -127,6 +127,11 @@ def cmd_slap(
         "-set",
         help="Set as default immediately (creates active state and auto-creates offer)",
     ),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview OS changes without applying them",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -156,6 +161,7 @@ def cmd_slap(
 | `csv` | `bool` | `False` | Target .csv files |
 | `sql` | `bool` | `False` | Target .sql files |
 | `set_default` | `bool` | `False` | If `True`, sets the application as default immediately. |
+| `dry_run` | `bool` | `False` | If `True`, previews OS changes without applying them. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -168,6 +174,7 @@ Returns `None`. Output is displayed via Rich console.
 2. Determines extension from the boolean flags (first True flag wins)
 3. If `set_default` is `True`, marks the association as active
 4. When `set_default` is used, an offer is automatically created for the pairing
+5. If `dry_run` is `True`, shows what OS changes would be made without applying them
 
 #### Raised Exceptions
 
@@ -177,6 +184,9 @@ Returns `None`. Output is displayed via Rich console.
 | `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE301` | Default already exists (active state) | Default already exists for {ext} |
 | `VE501` | Unexpected error | Unexpected error: {message} |
+| `VE601` | Unsupported platform | Unsupported platform: {platform} |
+| `VE602` | Cannot determine bundle ID (macOS) | Cannot determine bundle ID for: {app_path} |
+| `VE605` | OS operation failed | OS operation failed: {operation} - {details} |
 
 ---
 
@@ -206,6 +216,11 @@ def cmd_chop(
         "-forget",
         help="Forget the default (transition to removed state)",
     ),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview OS changes without applying them",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -234,6 +249,7 @@ def cmd_chop(
 | `csv` | `bool` | `False` | Target .csv files |
 | `sql` | `bool` | `False` | Target .sql files |
 | `forget` | `bool` | `False` | If `True`, forgets the default association. |
+| `dry_run` | `bool` | `False` | If `True`, previews OS changes without applying them. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -247,6 +263,7 @@ Returns `None`. Output is displayed via Rich console.
 | `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE302` | No default set | No default set for {ext} |
 | `VE501` | Unexpected error | Unexpected error: {message} |
+| `VE605` | OS operation failed | OS operation failed: {operation} - {details} |
 
 ---
 
@@ -279,6 +296,11 @@ def cmd_set(
     xml: bool = Option(False, "--xml", help="Target .xml files"),
     csv: bool = Option(False, "--csv", help="Target .csv files"),
     sql: bool = Option(False, "--sql", help="Target .sql files"),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview OS changes without applying them",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -307,6 +329,7 @@ def cmd_set(
 | `xml` | `bool` | `False` | Target .xml files |
 | `csv` | `bool` | `False` | Target .csv files |
 | `sql` | `bool` | `False` | Target .sql files |
+| `dry_run` | `bool` | `False` | If `True`, previews OS changes without applying them. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -321,6 +344,9 @@ Returns `None`. Output is displayed via Rich console.
 | `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE301` | Default already exists (active state) | Default already exists for {ext} |
 | `VE501` | Unexpected error | Unexpected error: {message} |
+| `VE601` | Unsupported platform | Unsupported platform: {platform} |
+| `VE602` | Cannot determine bundle ID (macOS) | Cannot determine bundle ID for: {app_path} |
+| `VE605` | OS operation failed | OS operation failed: {operation} - {details} |
 
 ---
 
@@ -345,6 +371,11 @@ def cmd_forget(
     xml: bool = Option(False, "--xml", help="Target .xml files"),
     csv: bool = Option(False, "--csv", help="Target .csv files"),
     sql: bool = Option(False, "--sql", help="Target .sql files"),
+    dry_run: bool = Option(
+        False,
+        "-dry",
+        help="Preview OS changes without applying them",
+    ),
     verbose: bool = Option(
         False,
         "-vb",
@@ -372,6 +403,7 @@ def cmd_forget(
 | `xml` | `bool` | `False` | Target .xml files |
 | `csv` | `bool` | `False` | Target .csv files |
 | `sql` | `bool` | `False` | Target .sql files |
+| `dry_run` | `bool` | `False` | If `True`, previews OS changes without applying them. |
 | `verbose` | `bool` | `False` | If `True`, enables detailed output. |
 
 #### Return Type
@@ -385,6 +417,7 @@ Returns `None`. Output is displayed via Rich console.
 | `VE102` | No extension specified or invalid | Invalid extension: {ext} is not supported |
 | `VE302` | No default set | No default set for {ext} |
 | `VE501` | Unexpected error | Unexpected error: {message} |
+| `VE605` | OS operation failed | OS operation failed: {operation} - {details} |
 
 ---
 
@@ -852,8 +885,382 @@ cmd_list(
 ## Cross-References
 
 - [tables.md](tables.md) - Single Source of Truth for command definitions (COMMANDS table)
-- [errors.md](errors.md) - Complete error catalog with codes VE101-VE501
+- [errors.md](errors.md) - Complete error catalog with codes VE101-VE606
 - [states.md](states.md) - State machine documentation for defaults and offers
 - [schemas.md](schemas.md) - JSON schema definitions for data persistence
 - [config.md](config.md) - Configuration options and hierarchy
 - [examples.md](examples.md) - Additional usage examples
+
+## Platform Module API
+
+The platform module (`vince/platform/`) provides cross-platform OS integration for setting file associations.
+
+### Module Structure
+
+```text
+vince/platform/
+├── __init__.py      # Factory functions and platform detection
+├── base.py          # Protocol definition and data classes
+├── macos.py         # macOS implementation
+├── windows.py       # Windows implementation
+├── uti_map.py       # Extension to UTI mapping
+└── errors.py        # Platform-specific error classes
+```
+
+### Platform Detection
+
+#### get_platform()
+
+Detect and return the current platform.
+
+```python
+from vince.platform import get_platform
+from vince.platform.base import Platform
+
+def get_platform() -> Platform:
+    """Detect and return the current platform."""
+    ...
+```
+
+**Returns**: `Platform` enum value (`MACOS`, `WINDOWS`, or `UNSUPPORTED`)
+
+**Example**:
+```python
+platform = get_platform()
+if platform == Platform.MACOS:
+    print("Running on macOS")
+elif platform == Platform.WINDOWS:
+    print("Running on Windows")
+else:
+    print("Unsupported platform")
+```
+
+#### get_handler()
+
+Get the platform-specific handler (singleton).
+
+```python
+from vince.platform import get_handler
+from vince.platform.base import PlatformHandler
+
+def get_handler() -> PlatformHandler:
+    """Get the platform-specific handler (singleton)."""
+    ...
+```
+
+**Returns**: `PlatformHandler` instance for the current platform
+
+**Raises**:
+
+| Error Code | Condition |
+|------------|-----------|
+| VE601 | Running on unsupported platform |
+
+**Example**:
+```python
+handler = get_handler()
+result = handler.set_default(".md", Path("/Applications/Code.app"))
+```
+
+### Data Classes
+
+#### Platform (Enum)
+
+```python
+from enum import Enum
+
+class Platform(Enum):
+    MACOS = "darwin"
+    WINDOWS = "win32"
+    UNSUPPORTED = "unsupported"
+```
+
+#### AppInfo
+
+Information about a validated application.
+
+```python
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+@dataclass
+class AppInfo:
+    path: Path                          # Resolved application path
+    name: str                           # Application name
+    bundle_id: Optional[str] = None     # macOS bundle identifier
+    executable: Optional[str] = None    # Windows executable path
+```
+
+#### OperationResult
+
+Result of a platform operation.
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class OperationResult:
+    success: bool                           # Whether operation succeeded
+    message: str                            # Human-readable message
+    previous_default: Optional[str] = None  # Previous OS default (for rollback)
+    error_code: Optional[str] = None        # Error code if failed
+```
+
+### PlatformHandler Protocol
+
+The `PlatformHandler` protocol defines the interface for platform-specific implementations.
+
+```python
+from typing import Protocol, Optional
+from pathlib import Path
+
+class PlatformHandler(Protocol):
+    """Protocol for platform-specific file association handlers."""
+    
+    @property
+    def platform(self) -> Platform:
+        """Return the platform this handler supports."""
+        ...
+    
+    def set_default(
+        self, 
+        extension: str, 
+        app_path: Path,
+        dry_run: bool = False
+    ) -> OperationResult:
+        """Set the OS default application for an extension."""
+        ...
+    
+    def remove_default(
+        self, 
+        extension: str,
+        dry_run: bool = False
+    ) -> OperationResult:
+        """Remove/reset the OS default for an extension."""
+        ...
+    
+    def get_current_default(self, extension: str) -> Optional[str]:
+        """Query the current OS default application for an extension."""
+        ...
+    
+    def verify_application(self, app_path: Path) -> AppInfo:
+        """Verify application exists and extract metadata."""
+        ...
+```
+
+### PlatformHandler Methods
+
+#### set_default()
+
+Set the OS default application for an extension.
+
+```python
+def set_default(
+    self, 
+    extension: str, 
+    app_path: Path,
+    dry_run: bool = False
+) -> OperationResult:
+    """Set the OS default application for an extension."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `extension` | `str` | File extension (e.g., ".md", ".py") |
+| `app_path` | `Path` | Path to the application |
+| `dry_run` | `bool` | If True, preview changes without applying |
+
+**Returns**: `OperationResult` with success status and message
+
+**Raises**:
+
+| Error Code | Condition |
+|------------|-----------|
+| VE602 | Cannot determine bundle ID (macOS) |
+| VE603 | Registry access denied (Windows) |
+| VE604 | Application not found |
+| VE605 | OS operation failed |
+
+#### remove_default()
+
+Remove/reset the OS default for an extension.
+
+```python
+def remove_default(
+    self, 
+    extension: str,
+    dry_run: bool = False
+) -> OperationResult:
+    """Remove/reset the OS default for an extension."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `extension` | `str` | File extension (e.g., ".md", ".py") |
+| `dry_run` | `bool` | If True, preview changes without applying |
+
+**Returns**: `OperationResult` with success status and message
+
+#### get_current_default()
+
+Query the current OS default application for an extension.
+
+```python
+def get_current_default(self, extension: str) -> Optional[str]:
+    """Query the current OS default application for an extension."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `extension` | `str` | File extension (e.g., ".md", ".py") |
+
+**Returns**: Application path/name or `None` if not set
+
+#### verify_application()
+
+Verify application exists and extract metadata.
+
+```python
+def verify_application(self, app_path: Path) -> AppInfo:
+    """Verify application exists and extract metadata."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `app_path` | `Path` | Path to the application |
+
+**Returns**: `AppInfo` with application metadata
+
+**Raises**:
+
+| Error Code | Condition |
+|------------|-----------|
+| VE604 | Application not found or invalid |
+
+### UTI Mapping Functions
+
+#### extension_to_uti()
+
+Convert file extension to macOS UTI.
+
+```python
+from vince.platform.uti_map import extension_to_uti
+
+def extension_to_uti(extension: str) -> Optional[str]:
+    """Convert file extension to macOS UTI."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `extension` | `str` | File extension (e.g., ".md", "md") |
+
+**Returns**: UTI string or `None` if not mapped
+
+**Example**:
+```python
+uti = extension_to_uti(".md")  # Returns "net.daringfireball.markdown"
+uti = extension_to_uti(".xyz")  # Returns None
+```
+
+#### uti_to_extension()
+
+Convert UTI back to primary extension.
+
+```python
+from vince.platform.uti_map import uti_to_extension
+
+def uti_to_extension(uti: str) -> Optional[str]:
+    """Convert UTI back to primary extension."""
+    ...
+```
+
+**Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `uti` | `str` | macOS UTI string |
+
+**Returns**: Extension string or `None` if not mapped
+
+**Example**:
+```python
+ext = uti_to_extension("net.daringfireball.markdown")  # Returns ".md"
+ext = uti_to_extension("unknown.uti")  # Returns None
+```
+
+### Platform Usage Examples
+
+#### Setting a Default
+
+```python
+from pathlib import Path
+from vince.platform import get_handler
+
+handler = get_handler()
+
+# Set default for markdown files
+result = handler.set_default(".md", Path("/Applications/Visual Studio Code.app"))
+if result.success:
+    print(f"Success: {result.message}")
+    print(f"Previous default: {result.previous_default}")
+else:
+    print(f"Failed: {result.message} ({result.error_code})")
+```
+
+#### Dry Run Mode
+
+```python
+from pathlib import Path
+from vince.platform import get_handler
+
+handler = get_handler()
+
+# Preview changes without applying
+result = handler.set_default(".md", Path("/Applications/Code.app"), dry_run=True)
+print(f"Would do: {result.message}")
+```
+
+#### Querying Current Default
+
+```python
+from vince.platform import get_handler
+
+handler = get_handler()
+
+# Get current OS default
+current = handler.get_current_default(".md")
+if current:
+    print(f"Current default for .md: {current}")
+else:
+    print("No default set for .md")
+```
+
+#### Removing a Default
+
+```python
+from vince.platform import get_handler
+
+handler = get_handler()
+
+# Remove custom default (reset to system default)
+result = handler.remove_default(".md")
+if result.success:
+    print(f"Removed: {result.message}")
+```

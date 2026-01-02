@@ -473,3 +473,220 @@ vince forget --md
 - [Tables Reference](tables.md) - Complete flag and command definitions
 - [Errors Reference](errors.md) - Error codes that may be raised
 - [States Reference](states.md) - State transitions for defaults and offers
+
+## OS Integration Examples
+
+The following examples demonstrate how vince integrates with the operating system to actually set file associations.
+
+### Setting OS Defaults
+
+When you use `-set` with `slap` or use the `set` command, vince configures the OS to use your chosen application:
+
+```sh
+# Set VS Code as default for markdown files (updates both JSON and OS)
+vince slap /Applications/Visual\ Studio\ Code.app -set --md
+
+# On Windows
+vince slap "C:\Program Files\Microsoft VS Code\Code.exe" -set --md
+```
+
+### Dry Run Mode
+
+Preview what OS changes would be made without actually applying them:
+
+```sh
+# Preview slap changes
+vince slap /Applications/Sublime\ Text.app -set --py -dry
+
+# Output shows:
+# Would set com.sublimetext.4 as default for public.python-script
+# Current OS default: com.apple.TextEdit
+# Proposed new default: com.sublimetext.4
+```
+
+```sh
+# Preview sync changes
+vince sync -dry
+
+# Output shows all pending OS changes:
+# .md: Would set com.microsoft.VSCode as default
+# .py: Already synced (no change needed)
+# .json: Would set com.sublimetext.4 as default
+```
+
+### Sync Command
+
+Apply all tracked defaults to the OS at once:
+
+```sh
+# Basic sync - apply all active defaults to OS
+vince sync
+
+# Preview what would be synced
+vince sync -dry
+
+# Sync with verbose output
+vince sync -vb
+```
+
+### Sync Workflow Example
+
+```sh
+# Step 1: Set up multiple defaults (JSON only, no OS changes yet)
+vince slap /Applications/Code.app --md
+vince slap /Applications/Code.app --py
+vince slap /Applications/Code.app --json
+
+# Step 2: Activate them (still JSON only)
+vince set /Applications/Code.app --md
+vince set /Applications/Code.app --py
+vince set /Applications/Code.app --json
+
+# Step 3: Preview what will be synced to OS
+vince sync -dry
+
+# Step 4: Apply all defaults to OS at once
+vince sync
+
+# Step 5: Verify with list
+vince list -def
+```
+
+### Removing OS Defaults
+
+When you forget a default, vince also removes the OS association:
+
+```sh
+# Remove default for markdown files (updates both JSON and OS)
+vince chop -forget --md
+
+# Or using forget command
+vince forget --md
+```
+
+### Dry Run with Remove
+
+```sh
+# Preview what would be removed from OS
+vince chop -forget --md -dry
+
+# Output shows:
+# Would reset default for .md (UTI: net.daringfireball.markdown)
+# Current OS default: com.microsoft.VSCode
+# Will reset to: system default
+```
+
+### Handling OS Errors
+
+If an OS operation fails, vince will warn you:
+
+```sh
+# If OS operation fails but JSON update succeeded
+vince slap /Applications/Code.app -set --md
+
+# Output might show:
+# ✓ Default set for .md
+# ⚠ OS operation failed: duti not installed
+# ℹ Run 'vince sync' to retry OS changes
+```
+
+### macOS-Specific Examples
+
+```sh
+# Using duti (recommended - install with: brew install duti)
+vince slap /Applications/Visual\ Studio\ Code.app -set --md
+
+# Check current OS default
+vince list -def
+# Shows both vince default and actual OS default
+
+# If duti is not installed, vince falls back to PyObjC
+# Install duti for more reliable operation:
+brew install duti
+```
+
+### Windows-Specific Examples
+
+```sh
+# Set default using full path to executable
+vince slap "C:\Program Files\Microsoft VS Code\Code.exe" -set --md
+
+# Or using a directory (vince finds the .exe)
+vince slap "C:\Program Files\Microsoft VS Code" -set --md
+
+# Check current OS default
+vince list -def
+```
+
+### Verbose OS Operations
+
+```sh
+# See detailed OS operation output
+vince slap /Applications/Code.app -set --md -vb
+
+# Output shows:
+# ℹ Processing slap command...
+# ℹ Validating path: /Applications/Visual Studio Code.app
+# ℹ Bundle ID: com.microsoft.VSCode
+# ℹ UTI for .md: net.daringfireball.markdown
+# ✓ Path validated
+# ✓ Default set for .md
+# ✓ OS default configured via duti
+# ℹ Previous OS default: com.apple.TextEdit
+```
+
+### Rollback Example
+
+If an OS operation fails partway through, vince attempts to rollback:
+
+```sh
+# If set_default fails after recording previous default
+vince slap /Applications/Code.app -set --md
+
+# Output might show:
+# ✗ VE605: OS operation failed: Launch Services error
+# ℹ Attempting rollback to previous default...
+# ✓ Rollback successful: restored com.apple.TextEdit
+```
+
+### Checking OS Sync Status
+
+```sh
+# List defaults with OS status
+vince list -def
+
+# Output shows sync status:
+# ╭─────────────────────────────────────────────────────────────╮
+# │                         Defaults                            │
+# ├───────────┬─────────────────────┬────────┬─────────────────┤
+# │ Extension │ Application         │ State  │ OS Default      │
+# ├───────────┼─────────────────────┼────────┼─────────────────┤
+# │ .md       │ /Applications/Code  │ active │ ✓ synced        │
+# │ .py       │ /Applications/Code  │ active │ ⚠ mismatch      │
+# │ .json     │ /Applications/Code  │ active │ ✓ synced        │
+# ╰───────────┴─────────────────────┴────────┴─────────────────╯
+```
+
+### Complete OS Integration Workflow
+
+```sh
+# 1. Set up defaults with OS integration
+vince slap /Applications/Visual\ Studio\ Code.app -set --md
+vince slap /Applications/Visual\ Studio\ Code.app -set --py
+vince slap /Applications/Visual\ Studio\ Code.app -set --json
+
+# 2. Verify OS defaults are set
+vince list -def
+
+# 3. Later, change one default
+vince forget --py
+vince slap /Applications/PyCharm.app -set --py
+
+# 4. Sync any out-of-sync entries
+vince sync
+
+# 5. Remove all custom defaults (reset to system defaults)
+vince forget --md
+vince forget --py
+vince forget --json
+```

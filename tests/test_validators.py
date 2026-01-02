@@ -1142,13 +1142,14 @@ class TestSchemaCompleteness:
 @st.composite
 def valid_error_entry(draw):
     """Generate a valid error catalog entry."""
-    category = draw(st.sampled_from(["Input", "File", "State", "Config", "System"]))
+    category = draw(st.sampled_from(["Input", "File", "State", "Config", "System", "OS"]))
     category_ranges = {
         "Input": (101, 105),
         "File": (201, 203),
         "State": (301, 304),
         "Config": (401, 402),
         "System": (501, 501),
+        "OS": (601, 606),
     }
     min_val, max_val = category_ranges[category]
     code_num = draw(st.integers(min_value=min_val, max_value=max_val))

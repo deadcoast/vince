@@ -1681,7 +1681,7 @@ class TestCrossReferenceIntegration:
         
         # Extract error codes from errors.md
         errors_content = errors_path.read_text()
-        error_code_pattern = re.compile(r"\bVE[1-5]\d{2}\b")
+        error_code_pattern = re.compile(r"\bVE[1-6]\d{2}\b")
         errors_md_codes = set(error_code_pattern.findall(errors_content))
         
         # Check bidirectional consistency

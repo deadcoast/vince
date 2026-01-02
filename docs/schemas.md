@@ -86,6 +86,20 @@ The defaults schema defines the structure for storing application-to-extension a
           "enum": ["pending", "active", "removed"],
           "description": "Current lifecycle state of the default"
         },
+        "os_synced": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether OS has been configured with this default"
+        },
+        "os_synced_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last successful OS sync"
+        },
+        "previous_os_default": {
+          "type": "string",
+          "description": "Previous OS default before vince changed it"
+        },
         "created_at": {
           "type": "string",
           "format": "date-time",
@@ -113,6 +127,9 @@ The defaults schema defines the structure for storing application-to-extension a
 | `application_path` | string | Yes | Absolute path to executable |
 | `application_name` | string | No | Human-readable app name |
 | `state` | enum | Yes | One of: `pending`, `active`, `removed` |
+| `os_synced` | boolean | No | Whether OS has been configured with this default |
+| `os_synced_at` | date-time | No | Timestamp of last successful OS sync |
+| `previous_os_default` | string | No | Previous OS default before vince changed it |
 | `created_at` | date-time | Yes | Creation timestamp |
 | `updated_at` | date-time | No | Last update timestamp |
 
