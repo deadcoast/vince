@@ -11,8 +11,40 @@ from typing import Any, Dict, List, Optional
 from vince.persistence.base import (atomic_write, create_backup, file_lock,
                                     load_json)
 
+# Current schema version
+CURRENT_SCHEMA_VERSION = "1.1.0"
+
 # Default schema for defaults.json
-DEFAULT_SCHEMA: Dict[str, Any] = {"version": "1.0.0", "defaults": []}
+DEFAULT_SCHEMA: Dict[str, Any] = {"version": CURRENT_SCHEMA_VERSION, "defaults": []}
+
+
+def migrate_schema(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Migrate data from older schema versions to current version.
+
+    Args:
+        data: Dictionary containing version and defaults array
+
+    Returns:
+        Migrated data dictionary with current schema version
+
+    Requirements: 9.1
+    """
+    version = data.get("version", "1.0.0")
+
+    # Migration from 1.0.0 to 1.1.0
+    if version == "1.0.0":
+        # Add default values for new OS sync fields to existing entries
+        for entry in data.get("defaults", []):
+            if "os_synced" not in entry:
+                entry["os_synced"] = False
+            # os_synced_at and previous_os_default are optional,
+            # only added when os_synced becomes True
+
+        # Update version
+        data["version"] = "1.1.0"
+        version = "1.1.0"
+
+    return data
 
 
 class DefaultsStore:
@@ -38,14 +70,27 @@ class DefaultsStore:
     def load(self) -> Dict[str, Any]:
         """Load defaults data from JSON file.
 
+        Automatically migrates data from older schema versions.
+
         Returns:
             Dictionary containing version and defaults array.
             Returns default schema if file doesn't exist.
 
         Raises:
             DataCorruptedError: If file contains invalid JSON
+
+        Requirements: 9.1
         """
-        return load_json(self.path, DEFAULT_SCHEMA)
+        data = load_json(self.path, DEFAULT_SCHEMA)
+
+        # Apply migrations if needed
+        if data.get("version") != CURRENT_SCHEMA_VERSION:
+            data = migrate_schema(data)
+            # Save migrated data (without backup to avoid unnecessary backups)
+            if self.path.exists():
+                atomic_write(self.path, data)
+
+        return data
 
     def save(
         self, data: Dict[str, Any], backup_enabled: bool = True, max_backups: int = 5
@@ -92,6 +137,8 @@ class DefaultsStore:
         application_path: str,
         state: str = "pending",
         application_name: Optional[str] = None,
+        os_synced: bool = False,
+        previous_os_default: Optional[str] = None,
         backup_enabled: bool = True,
         max_backups: int = 5,
     ) -> Dict[str, Any]:
@@ -102,28 +149,41 @@ class DefaultsStore:
             application_path: Absolute path to application executable
             state: Initial state ("pending" or "active")
             application_name: Optional human-readable application name
+            os_synced: Whether the OS has been configured (default False)
+            previous_os_default: The OS default before vince changed it
             backup_enabled: Whether to create backup before write
             max_backups: Maximum number of backups to retain
 
         Returns:
             The created default entry dictionary
+
+        Requirements: 9.1
         """
         data = self.load()
 
         # Generate unique ID
         entry_id = f"def-{extension[1:]}-{len(data['defaults']):03d}"
 
-        # Create entry
+        # Create entry with OS sync fields
         entry: Dict[str, Any] = {
             "id": entry_id,
             "extension": extension,
             "application_path": application_path,
             "state": state,
+            "os_synced": os_synced,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
         if application_name:
             entry["application_name"] = application_name
+
+        # Add os_synced_at timestamp if synced
+        if os_synced:
+            entry["os_synced_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Add previous_os_default if provided
+        if previous_os_default is not None:
+            entry["previous_os_default"] = previous_os_default
 
         data["defaults"].append(entry)
         self.save(data, backup_enabled, max_backups)
@@ -134,6 +194,8 @@ class DefaultsStore:
         self,
         entry_id: str,
         new_state: str,
+        os_synced: Optional[bool] = None,
+        previous_os_default: Optional[str] = None,
         backup_enabled: bool = True,
         max_backups: int = 5,
     ) -> Optional[Dict[str, Any]]:
@@ -142,11 +204,15 @@ class DefaultsStore:
         Args:
             entry_id: Unique identifier of the entry to update
             new_state: New state value ("pending", "active", or "removed")
+            os_synced: Optional OS sync status to update
+            previous_os_default: Optional previous OS default to record
             backup_enabled: Whether to create backup before write
             max_backups: Maximum number of backups to retain
 
         Returns:
             Updated entry dictionary if found, None otherwise
+
+        Requirements: 9.1
         """
         data = self.load()
 
@@ -154,6 +220,16 @@ class DefaultsStore:
             if entry["id"] == entry_id:
                 entry["state"] = new_state
                 entry["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                # Update OS sync fields if provided
+                if os_synced is not None:
+                    entry["os_synced"] = os_synced
+                    if os_synced:
+                        entry["os_synced_at"] = datetime.now(timezone.utc).isoformat()
+
+                if previous_os_default is not None:
+                    entry["previous_os_default"] = previous_os_default
+
                 self.save(data, backup_enabled, max_backups)
                 return entry
 
