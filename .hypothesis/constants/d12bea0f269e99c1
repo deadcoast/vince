@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/persistence/defaults.py
+# hypothesis_version: 6.148.8
+
+['1.0.0', '1.1.0', 'active', 'application_name', 'application_path', 'backups', 'created_at', 'defaults', 'defaults.json', 'extension', 'id', 'os_synced', 'os_synced_at', 'pending', 'previous_os_default', 'removed', 'state', 'updated_at', 'version']

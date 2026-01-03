@@ -6,16 +6,16 @@ Extract JSON schemas from `docs/schemas.md` into actual `.json` files in `schema
 
 ## Tasks
 
-- [ ] 1. Create schema files from docs/schemas.md
-  - [ ] 1.1 Create `schemas/defaults.schema.json` with DefaultEntry definition
+- [x] 1. Create schema files from docs/schemas.md
+  - [x] 1.1 Create `schemas/defaults.schema.json` with DefaultEntry definition
     - Extract verbatim from docs/schemas.md "Defaults Schema" section
     - Include all fields: id, extension, application_path, application_name, state, os_synced, os_synced_at, previous_os_default, created_at, updated_at
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
-  - [ ] 1.2 Create `schemas/offers.schema.json` with OfferEntry definition
+  - [x] 1.2 Create `schemas/offers.schema.json` with OfferEntry definition
     - Extract verbatim from docs/schemas.md "Offers Schema" section
     - Include all fields: offer_id, default_id, state, auto_created, description, created_at, used_at
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
-  - [ ] 1.3 Create `schemas/config.schema.json` with config options
+  - [x] 1.3 Create `schemas/config.schema.json` with config options
     - Extract verbatim from docs/schemas.md "Config Schema" section
     - Include all fields: version, data_dir, verbose, color_theme, backup_enabled, max_backups, confirm_destructive
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9_
@@ -35,27 +35,27 @@ Extract JSON schemas from `docs/schemas.md` into actual `.json` files in `schema
     - Skip validation without error when jsonschema not installed
     - _Requirements: 4.7, 6.2, 6.3_
 
-- [ ] 3. Integrate validation into persistence layer
-  - [ ] 3.1 Modify `vince/persistence/base.py` load_json() to accept schema_name parameter
+- [x] 3. Integrate validation into persistence layer
+  - [x] 3.1 Modify `vince/persistence/base.py` load_json() to accept schema_name parameter
     - Add optional schema_name parameter
     - Call validate_against_schema() when schema_name provided
     - _Requirements: 5.1_
-  - [ ] 3.2 Modify `vince/persistence/defaults.py` to pass schema_name="defaults"
+  - [x] 3.2 Modify `vince/persistence/defaults.py` to pass schema_name="defaults"
     - Update load() method to use schema validation
     - _Requirements: 5.2_
-  - [ ] 3.3 Modify `vince/persistence/offers.py` to pass schema_name="offers"
+  - [x] 3.3 Modify `vince/persistence/offers.py` to pass schema_name="offers"
     - Update load() method to use schema validation
     - _Requirements: 5.3_
-  - [ ] 3.4 Modify `vince/config.py` to validate config on load
+  - [x] 3.4 Modify `vince/config.py` to validate config on load
     - Add schema validation to get_config()
     - _Requirements: 5.4, 5.5_
 
-- [ ] 4. Add jsonschema dependency
-  - [ ] 4.1 Add `jsonschema>=4.0.0` to pyproject.toml optional-dependencies
+- [x] 4. Add jsonschema dependency
+  - [x] 4.1 Add `jsonschema>=4.0.0` to pyproject.toml optional-dependencies
     - Add under dev or validation optional group
     - _Requirements: 6.1_
 
-- [ ] 5. Checkpoint - Verify schema files and validation work
+- [x] 5. Checkpoint - Verify schema files and validation work
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Write tests for schema validation

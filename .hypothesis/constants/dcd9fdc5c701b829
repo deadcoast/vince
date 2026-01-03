@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/validation/schema.py
+# hypothesis_version: 6.148.8
+
+['.', 'config', 'defaults', 'offers', 'root', 'schemas']

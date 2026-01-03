@@ -36,16 +36,18 @@ class OffersStore:
         self.backup_dir = data_dir / "backups"
 
     def load(self) -> Dict[str, Any]:
-        """Load offers data from JSON file.
+        """Load offers data from JSON file with schema validation.
 
         Returns:
             Dictionary containing version and offers array.
             Returns default schema if file doesn't exist.
 
         Raises:
-            DataCorruptedError: If file contains invalid JSON
+            DataCorruptedError: If file contains invalid JSON or fails schema validation
+
+        Requirements: 5.3
         """
-        return load_json(self.path, DEFAULT_SCHEMA)
+        return load_json(self.path, DEFAULT_SCHEMA, schema_name="offers")
 
     def save(
         self, data: Dict[str, Any], backup_enabled: bool = True, max_backups: int = 5

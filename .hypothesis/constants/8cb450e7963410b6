@@ -1,0 +1,4 @@
+# file: /Users/deadcoast/github/vince/vince/config.py
+# hypothesis_version: 6.148.8
+
+[100, './.vince/config.json', '1.0.0', '^\\d+\\.\\d+\\.\\d+$', 'backup_enabled', 'color_theme', 'confirm_destructive', 'dark', 'data_dir', 'default', 'light', 'max_backups', 'verbose', 'version', '~/.vince', '~/.vince/config.json']

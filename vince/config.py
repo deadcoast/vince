@@ -141,6 +141,8 @@ def load_config_file(path: Path, validate: bool = True) -> Optional[Dict[str, An
     Raises:
         ConfigMalformedError: If file contains invalid JSON or is not a dict
         InvalidConfigOptionError: If validation is enabled and config is invalid
+
+    Requirements: 5.4, 5.5
     """
     if not path.exists():
         return None
@@ -156,6 +158,16 @@ def load_config_file(path: Path, validate: bool = True) -> Optional[Dict[str, An
         raise ConfigMalformedError(str(path))
 
     if validate:
+        # First validate against JSON schema if jsonschema is available
+        try:
+            from vince.validation.schema import validate_config as schema_validate_config
+
+            schema_validate_config(config)
+        except ImportError:
+            # jsonschema not installed, skip schema validation
+            pass
+
+        # Then validate with built-in validation
         validate_config(config)
 
     return config

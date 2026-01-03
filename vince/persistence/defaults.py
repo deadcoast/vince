@@ -68,7 +68,7 @@ class DefaultsStore:
         self.backup_dir = data_dir / "backups"
 
     def load(self) -> Dict[str, Any]:
-        """Load defaults data from JSON file.
+        """Load defaults data from JSON file with schema validation.
 
         Automatically migrates data from older schema versions.
 
@@ -77,11 +77,11 @@ class DefaultsStore:
             Returns default schema if file doesn't exist.
 
         Raises:
-            DataCorruptedError: If file contains invalid JSON
+            DataCorruptedError: If file contains invalid JSON or fails schema validation
 
-        Requirements: 9.1
+        Requirements: 5.2, 9.1
         """
-        data = load_json(self.path, DEFAULT_SCHEMA)
+        data = load_json(self.path, DEFAULT_SCHEMA, schema_name="defaults")
 
         # Apply migrations if needed
         if data.get("version") != CURRENT_SCHEMA_VERSION:
