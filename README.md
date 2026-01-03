@@ -2,7 +2,7 @@
 
 A Rich CLI for setting default applications to file extensions.
 
-![]
+![https://github.com/deadcoast/vince/blob/master/assets/logo.png]
 
 ## Installation
 
