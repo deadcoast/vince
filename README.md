@@ -1,8 +1,8 @@
-# vince
-
-A Rich CLI for setting default applications to file extensions.
+# README.md
 
 ![vince-logo](https://github.com/deadcoast/vince/blob/master/assets/logo.png)
+
+A Rich CLI for setting default applications to file extensions.
 
 ## Installation
 
