@@ -2,6 +2,8 @@
 
 A Rich CLI for setting default applications to file extensions.
 
+![]
+
 ## Installation
 
 ```bash
