@@ -2,58 +2,69 @@
 
 A Rich CLI for setting default applications to file extensions.
 
-## Overview
+## Installation
 
-**vince** is a sophisticated command-line interface application built with Python, Typer, and Rich. It provides an intuitive way to manage default application associations for file extensions with elevated visual ASCII UI delivery.
+```bash
+pip install vince
+```
 
-The CLI offers:
-- Quick default application assignment with `slap` and `set` commands
-- Easy removal of associations with `chop` and `forget` commands
-- Custom shortcut creation via `offer` and `reject` commands
-- Comprehensive listing with the `list` command
+Or with uv:
+
+```bash
+uv pip install vince
+```
+
+## Usage
+
+```bash
+# See all commands
+vince --help
+
+# Set VS Code as default for .md files
+vince slap /Applications/Visual\ Studio\ Code.app --md -set
+
+# List all defaults
+vince list
+
+# Remove a default
+vince chop --md -forget
+
+# Sync all defaults to OS
+vince sync
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `slap` | Set application as default for extension |
+| `chop` | Remove file extension association |
+| `set` | Set a default for file extension |
+| `forget` | Forget a default for file extension |
+| `offer` | Create custom shortcut/alias |
+| `reject` | Remove custom offer |
+| `list` | Display tracked assets and offers |
+| `sync` | Sync all defaults to OS |
 
 ## Documentation
 
-For detailed documentation, see the [docs/](docs directory:
-
-- [Overview](docs/overview.md) - System design, commands, flags, and rules
-- [API](docs/api.md) - Python interface documentation for all CLI commands
-- [Schemas](docs/schemas.md) - JSON schemas for defaults, offers, and configuration
-- [Errors](docs/errors.md) - Error catalog with codes, messages, and recovery actions
-- [States](docs/states.md) - State machine documentation for defaults and offers
-- [Config](docs/config.md) - Configuration options, hierarchy, and precedence
-- [Tables](docs/tables.md) - Complete reference tables for all definitions
-- [Examples](docs/examples.md) - Practical usage examples for all commands
-- [Testing](docs/testing.md) - Testing patterns, fixtures, and examples
-
-## Quick Start
-
-```bash
-# Install dependencies
-uv sync
-
-# Run the CLI
-uv run python -m vince --help
-
-# Example: Set VS Code as default for .md files
-uv run python -m vince slap /usr/bin/code --md -set
-```
-
-## Installation
-
-See [docs/README.md](docs/README.md) for detailed installation instructions.
+- [Overview](docs/overview.md) - Commands, flags, and rules
+- [API](docs/api.md) - Python interface documentation
+- [Examples](docs/examples.md) - Usage examples
+- [Errors](docs/errors.md) - Error codes and recovery
+- [Config](docs/config.md) - Configuration options
 
 ## Development
 
 ```bash
+# Clone and install
+git clone https://github.com/deadcoast/vince.git
+cd vince
+uv sync
+
 # Run tests
 uv run pytest
 
-# Run validation
-uv run python validate_docs.py --all
+# Type check
+uv run mypy vince/
 ```
-
-## Cross-References
-
-- [Documentation Index](docs/README.md) - Full documentation index
-- [Tables Reference](docs/tables.md) - Single Source of Truth for all definitions
