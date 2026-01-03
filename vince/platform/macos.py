@@ -65,6 +65,7 @@ class MacOSHandler:
             raise ApplicationNotFoundError(str(app_path))
 
         # Handle both .app bundles and direct executables
+        bundle_path: Optional[Path]
         if resolved.suffix == ".app":
             bundle_path = resolved
         else:

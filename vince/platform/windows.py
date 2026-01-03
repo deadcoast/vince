@@ -84,6 +84,7 @@ class WindowsHandler:
             raise ApplicationNotFoundError(str(app_path))
 
         # Handle .exe directly or find executable in folder
+        exe_path: Optional[Path]
         if resolved.suffix.lower() == ".exe":
             exe_path = resolved
         else:
