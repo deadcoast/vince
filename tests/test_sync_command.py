@@ -280,6 +280,224 @@ class TestSyncCommandBasic:
         # Both should have been attempted
         assert mock_handler.set_default.call_count == 2
 
+    def test_sync_partial_failures_error_collection(self, runner, isolated_data_dir, monkeypatch):
+        """Test sync collects errors from partial failures.
+        
+        Requirements: 3.3
+        """
+        # Pre-populate with multiple active defaults
+        defaults_data = {
+            "version": "1.0.0",
+            "defaults": [
+                {
+                    "id": "def-md-000",
+                    "extension": ".md",
+                    "application_path": "/usr/bin/app1",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-py-001",
+                    "extension": ".py",
+                    "application_path": "/usr/bin/app2",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-txt-002",
+                    "extension": ".txt",
+                    "application_path": "/usr/bin/app3",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+            ],
+        }
+        (isolated_data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(isolated_data_dir)
+        monkeypatch.setattr("vince.commands.sync.get_config", mock_get_config)
+        monkeypatch.setattr("vince.commands.sync.get_data_dir", mock_get_data_dir)
+
+        # Mock handler: first and third fail, second succeeds
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.return_value = None
+        mock_handler.set_default.side_effect = [
+            OperationResult(success=False, message="Permission denied", error_code="VE605"),
+            OperationResult(success=True, message="Success", previous_default=None),
+            OperationResult(success=False, message="Registry error", error_code="VE606"),
+        ]
+
+        with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+            with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                result = runner.invoke(app, ["sync"])
+
+        # All three should have been attempted
+        assert mock_handler.set_default.call_count == 3
+        # Output should report failures
+        assert "Failed" in result.output or "failed" in result.output
+
+    def test_sync_continues_after_exception(self, runner, isolated_data_dir, monkeypatch):
+        """Test sync continues after an exception in one entry.
+        
+        Requirements: 3.3
+        """
+        # Pre-populate with multiple active defaults
+        defaults_data = {
+            "version": "1.0.0",
+            "defaults": [
+                {
+                    "id": "def-md-000",
+                    "extension": ".md",
+                    "application_path": "/usr/bin/app1",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-py-001",
+                    "extension": ".py",
+                    "application_path": "/usr/bin/app2",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+            ],
+        }
+        (isolated_data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(isolated_data_dir)
+        monkeypatch.setattr("vince.commands.sync.get_config", mock_get_config)
+        monkeypatch.setattr("vince.commands.sync.get_data_dir", mock_get_data_dir)
+
+        # Mock handler: first call raises exception, second succeeds
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.return_value = None
+        mock_handler.set_default.side_effect = [
+            Exception("Unexpected OS error"),
+            OperationResult(success=True, message="Success", previous_default=None),
+        ]
+
+        with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+            with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                runner.invoke(app, ["sync"])
+
+        # Both should have been attempted despite exception
+        assert mock_handler.set_default.call_count == 2
+
+    def test_sync_all_entries_already_synced(self, runner, isolated_data_dir, monkeypatch):
+        """Test sync with all entries already synced skips all.
+        
+        Requirements: 3.1, 3.2
+        """
+        # Pre-populate with multiple already-synced defaults
+        defaults_data = {
+            "version": "1.0.0",
+            "defaults": [
+                {
+                    "id": "def-md-000",
+                    "extension": ".md",
+                    "application_path": "/usr/bin/app1",
+                    "state": "active",
+                    "os_synced": True,
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-py-001",
+                    "extension": ".py",
+                    "application_path": "/usr/bin/app2",
+                    "state": "active",
+                    "os_synced": True,
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-txt-002",
+                    "extension": ".txt",
+                    "application_path": "/usr/bin/app3",
+                    "state": "active",
+                    "os_synced": True,
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+            ],
+        }
+        (isolated_data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(isolated_data_dir)
+        monkeypatch.setattr("vince.commands.sync.get_config", mock_get_config)
+        monkeypatch.setattr("vince.commands.sync.get_data_dir", mock_get_data_dir)
+
+        # Mock the platform handler - return matching paths for all
+        def mock_get_current_default(ext):
+            for d in defaults_data["defaults"]:
+                if d["extension"] == ext:
+                    return d["application_path"]
+            return None
+
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.side_effect = mock_get_current_default
+        mock_handler.set_default.return_value = OperationResult(
+            success=True,
+            message="Set as default",
+            previous_default=None,
+        )
+
+        with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+            with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                result = runner.invoke(app, ["sync", "-vb"])
+
+        assert result.exit_code == 0
+        # Handler's set_default should NOT be called (all already synced)
+        mock_handler.set_default.assert_not_called()
+        # All entries should be skipped
+        assert "skipping" in result.output.lower() or "already synced" in result.output.lower()
+
+    def test_sync_verbose_output(self, runner, isolated_data_dir, monkeypatch):
+        """Test sync with verbose flag shows detailed output.
+        
+        Requirements: 3.5
+        """
+        # Pre-populate with active defaults
+        defaults_data = {
+            "version": "1.0.0",
+            "defaults": [
+                {
+                    "id": "def-md-000",
+                    "extension": ".md",
+                    "application_path": "/usr/bin/app1",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+                {
+                    "id": "def-py-001",
+                    "extension": ".py",
+                    "application_path": "/usr/bin/app2",
+                    "state": "active",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                },
+            ],
+        }
+        (isolated_data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(isolated_data_dir)
+        monkeypatch.setattr("vince.commands.sync.get_config", mock_get_config)
+        monkeypatch.setattr("vince.commands.sync.get_data_dir", mock_get_data_dir)
+
+        # Mock the platform handler
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.return_value = None
+        mock_handler.set_default.return_value = OperationResult(
+            success=True,
+            message="Set as default",
+            previous_default=None,
+        )
+
+        with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+            with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                result = runner.invoke(app, ["sync", "-vb"])
+
+        assert result.exit_code == 0
+        # Verbose output should show count of active defaults found
+        assert "Found" in result.output or "active" in result.output.lower()
+        # Should show processing info for each extension
+        assert "Processing" in result.output or ".md" in result.output
+
     def test_sync_dry_run(self, runner, isolated_data_dir, monkeypatch):
         """Test sync -dry shows planned changes without executing.
         
@@ -518,6 +736,135 @@ class TestSyncCommandProperties:
 
         # All entries should have been attempted
         assert mock_handler.set_default.call_count == len(extensions)
+
+
+class TestSyncSkipAndErrorHandlingProperty:
+    """Property-based tests for sync skip and error handling.
+
+    **Feature: coverage-completion, Property 2: Sync Skip and Error Handling**
+    **Validates: Requirements 3.2, 3.3**
+    """
+
+    @given(
+        synced_extensions=st.lists(supported_extensions, min_size=0, max_size=3, unique=True),
+        unsynced_extensions=st.lists(supported_extensions, min_size=1, max_size=3, unique=True),
+        failure_indices=st.lists(st.integers(min_value=0, max_value=5), min_size=0, max_size=2, unique=True),
+    )
+    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_sync_skip_and_error_handling_property(
+        self, synced_extensions, unsynced_extensions, failure_indices, tmp_path
+    ):
+        """
+        **Feature: coverage-completion, Property 2: Sync Skip and Error Handling**
+
+        *For any* set of default entries where some are marked `os_synced=True`
+        and some have failing OS operations, the sync command SHALL skip
+        already-synced entries and collect all errors from failed operations
+        without stopping early.
+
+        **Validates: Requirements 3.2, 3.3**
+        """
+        runner = CliRunner()
+
+        # Ensure no overlap between synced and unsynced extensions
+        unsynced_extensions = [e for e in unsynced_extensions if e not in synced_extensions]
+        if not unsynced_extensions:
+            # Need at least one unsynced extension to test
+            return
+
+        # Create isolated data dir
+        data_dir = tmp_path / ".vince"
+        data_dir.mkdir(exist_ok=True)
+
+        # Create defaults - some synced, some not
+        defaults_list = []
+        idx = 0
+
+        # Add synced entries
+        for ext in synced_extensions:
+            defaults_list.append({
+                "id": f"def-{ext[1:]}-{idx:03d}",
+                "extension": ext,
+                "application_path": f"/usr/bin/synced_app{idx}",
+                "state": "active",
+                "os_synced": True,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            })
+            idx += 1
+
+        # Add unsynced entries
+        unsynced_start_idx = idx
+        for ext in unsynced_extensions:
+            defaults_list.append({
+                "id": f"def-{ext[1:]}-{idx:03d}",
+                "extension": ext,
+                "application_path": f"/usr/bin/unsynced_app{idx}",
+                "state": "active",
+                "os_synced": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            })
+            idx += 1
+
+        defaults_data = {"version": "1.0.0", "defaults": defaults_list}
+        (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+        (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(data_dir)
+
+        # Mock the platform handler
+        def mock_get_current_default(ext):
+            # Return matching path for synced entries
+            for d in defaults_list:
+                if d["extension"] == ext and d.get("os_synced", False):
+                    return d["application_path"]
+            return None
+
+        # Determine which unsynced entries will fail
+        valid_failure_indices = [i for i in failure_indices if i < len(unsynced_extensions)]
+
+        def mock_set_default(ext, path, dry_run=False):
+            # Find the index of this extension in unsynced_extensions
+            try:
+                unsynced_idx = unsynced_extensions.index(ext)
+                if unsynced_idx in valid_failure_indices:
+                    return OperationResult(
+                        success=False,
+                        message=f"Failed to set default for {ext}",
+                        error_code="VE605",
+                    )
+            except ValueError:
+                pass
+            return OperationResult(
+                success=True,
+                message=f"Set {ext} as default",
+                previous_default=None,
+            )
+
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.side_effect = mock_get_current_default
+        mock_handler.set_default.side_effect = mock_set_default
+
+        with patch("vince.commands.sync.get_config", mock_get_config):
+            with patch("vince.commands.sync.get_data_dir", mock_get_data_dir):
+                with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+                    with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                        result = runner.invoke(app, ["sync", "-vb"])
+
+        # Property 1: Synced entries should be skipped (set_default not called for them)
+        called_extensions = set()
+        for call in mock_handler.set_default.call_args_list:
+            called_extensions.add(call[0][0])
+
+        for ext in synced_extensions:
+            assert ext not in called_extensions, f"Synced extension {ext} should have been skipped"
+
+        # Property 2: All unsynced entries should be attempted (no early stopping)
+        assert mock_handler.set_default.call_count == len(unsynced_extensions), \
+            f"Expected {len(unsynced_extensions)} calls, got {mock_handler.set_default.call_count}"
+
+        # Property 3: All unsynced extensions should have been processed
+        for ext in unsynced_extensions:
+            assert ext in called_extensions, f"Unsynced extension {ext} should have been processed"
 
     @given(extensions=unique_extensions_list)
     @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])

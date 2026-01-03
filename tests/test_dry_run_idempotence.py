@@ -471,3 +471,160 @@ class TestDryRunIdempotence:
         output_lower = result.output.lower()
         assert "dry run" in output_lower or "would" in output_lower
 
+
+
+class TestDryRunIdempotenceEnhanced:
+    """Enhanced property-based tests for dry run idempotence.
+
+    **Feature: coverage-completion, Property 3: Dry Run Idempotence**
+    **Validates: Requirements 3.4**
+    """
+
+    @given(
+        extensions=unique_extensions_list,
+        num_invocations=st.integers(min_value=1, max_value=5),
+    )
+    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_sync_dry_run_idempotence_multiple_invocations(
+        self, extensions, num_invocations, tmp_path
+    ):
+        """
+        **Feature: coverage-completion, Property 3: Dry Run Idempotence**
+
+        *For any* set of default entries and any number of dry-run sync
+        invocations, the OS state and JSON data files SHALL remain unchanged
+        after all dry-run operations.
+
+        **Validates: Requirements 3.4**
+        """
+        runner = CliRunner()
+
+        # Create isolated data dir
+        data_dir = tmp_path / ".vince"
+        data_dir.mkdir(exist_ok=True)
+
+        # Create active defaults (not synced) - use v1.1.0 to avoid migration changes
+        defaults_list = []
+        for i, ext in enumerate(extensions):
+            defaults_list.append({
+                "id": f"def-{ext[1:]}-{i:03d}",
+                "extension": ext,
+                "application_path": f"/usr/bin/app{i}",
+                "state": "active",
+                "os_synced": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            })
+
+        initial_defaults_data = {"version": "1.1.0", "defaults": defaults_list}
+        initial_offers_data = {"version": "1.0.0", "offers": []}
+
+        (data_dir / "defaults.json").write_text(json.dumps(initial_defaults_data, indent=2))
+        (data_dir / "offers.json").write_text(json.dumps(initial_offers_data, indent=2))
+
+        # Capture initial state as parsed JSON (to avoid formatting differences)
+        initial_defaults = json.loads((data_dir / "defaults.json").read_text())
+        initial_offers = json.loads((data_dir / "offers.json").read_text())
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(data_dir)
+
+        # Mock the platform handler
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.return_value = None
+        mock_handler.set_default.return_value = OperationResult(
+            success=True,
+            message="Would set as default",
+            previous_default=None,
+        )
+
+        # Run sync -dry multiple times
+        for _ in range(num_invocations):
+            with patch("vince.commands.sync.get_config", mock_get_config):
+                with patch("vince.commands.sync.get_data_dir", mock_get_data_dir):
+                    with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+                        with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                            result = runner.invoke(app, ["sync", "-dry"])
+
+            # Each invocation should succeed
+            assert result.exit_code == 0
+
+        # Property: JSON files should be semantically unchanged after all dry-run invocations
+        final_defaults = json.loads((data_dir / "defaults.json").read_text())
+        final_offers = json.loads((data_dir / "offers.json").read_text())
+
+        # Compare semantic content (version may be migrated, but data should be same)
+        assert final_defaults["defaults"] == initial_defaults["defaults"], \
+            "defaults.json entries were modified by dry-run"
+        assert final_offers == initial_offers, \
+            "offers.json was modified by dry-run"
+
+        # Property: os_synced should still be False for all entries
+        for entry in final_defaults["defaults"]:
+            assert entry.get("os_synced", False) is False, \
+                f"os_synced was modified for {entry['extension']}"
+
+    @given(
+        extensions=unique_extensions_list,
+        num_invocations=st.integers(min_value=1, max_value=3),
+    )
+    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_sync_dry_run_consistent_output(
+        self, extensions, num_invocations, tmp_path
+    ):
+        """
+        **Feature: coverage-completion, Property 3: Dry Run Idempotence**
+
+        *For any* set of default entries, multiple dry-run sync invocations
+        SHALL produce consistent output (same planned changes each time).
+
+        **Validates: Requirements 3.4**
+        """
+        runner = CliRunner()
+
+        # Create isolated data dir
+        data_dir = tmp_path / ".vince"
+        data_dir.mkdir(exist_ok=True)
+
+        # Create active defaults (not synced)
+        defaults_list = []
+        for i, ext in enumerate(extensions):
+            defaults_list.append({
+                "id": f"def-{ext[1:]}-{i:03d}",
+                "extension": ext,
+                "application_path": f"/usr/bin/app{i}",
+                "state": "active",
+                "os_synced": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            })
+
+        defaults_data = {"version": "1.0.0", "defaults": defaults_list}
+        (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+        (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+
+        mock_get_config, mock_get_data_dir = mock_config_factory(data_dir)
+
+        # Mock the platform handler
+        mock_handler = MagicMock()
+        mock_handler.get_current_default.return_value = None
+        mock_handler.set_default.return_value = OperationResult(
+            success=True,
+            message="Would set as default",
+            previous_default=None,
+        )
+
+        # Run sync -dry multiple times and collect outputs
+        outputs = []
+        for _ in range(num_invocations):
+            with patch("vince.commands.sync.get_config", mock_get_config):
+                with patch("vince.commands.sync.get_data_dir", mock_get_data_dir):
+                    with patch("vince.commands.sync.get_platform", return_value=Platform.MACOS):
+                        with patch("vince.commands.sync.get_handler", return_value=mock_handler):
+                            result = runner.invoke(app, ["sync", "-dry"])
+
+            assert result.exit_code == 0
+            outputs.append(result.output)
+
+        # Property: All outputs should be identical (consistent behavior)
+        if len(outputs) > 1:
+            for i, output in enumerate(outputs[1:], start=2):
+                assert output == outputs[0], \
+                    f"Output from invocation {i} differs from first invocation"

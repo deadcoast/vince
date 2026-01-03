@@ -34,49 +34,49 @@ This implementation plan addresses the remaining gaps to achieve production read
     - Add `mock_unsupported_platform` fixture
     - *Requirements: 5.5*
 
-- [ ] 4. Add entry point tests
-  - [ ] 4.1 Create `tests/test_main_entry.py`
+- [x] 4. Add entry point tests
+  - [x] 4.1 Create `tests/test_main_entry.py`
     - Test `__main__.py` module import
     - Test CLI --help invocation
     - Test CLI --version invocation
     - *Requirements: 1.1, 1.2*
-  - [ ] 4.2 Write property test for CLI initialization
+  - [x] 4.2 Write property test for CLI initialization
     - Verify CLI always initializes without error
     - *Requirements: 1.1*
 
-- [ ] 5. Checkpoint - Verify entry point coverage
+- [x] 5. Checkpoint - Verify entry point coverage
   - Run `uv run pytest tests/test_main_entry.py -v`
   - Ensure tests pass
   - Ask the user if questions arise
 
-- [ ] 6. Enhance Windows handler tests
-  - [ ] 6.1 Add registry operation mock tests
+- [x] 6. Enhance Windows handler tests
+  - [x] 6.1 Add registry operation mock tests
     - Test `set_default()` creates correct ProgID entries
     - Test `remove_default()` cleans up registry entries
     - Test `get_current_default()` queries correct keys
     - *Requirements: 2.2, 2.3, 2.4*
-  - [ ] 6.2 Add shell notification tests
+  - [x] 6.2 Add shell notification tests
     - Test SHChangeNotify is called after set_default
     - Test SHChangeNotify is called after remove_default
     - *Requirements: 2.5*
-  - [ ] 6.3 Write property test for Windows handler operations
+  - [x] 6.3 Write property test for Windows handler operations
     - **Property 1: Windows Handler Registry Operations**
     - **Validates: Requirements 2.2, 2.3, 2.4, 2.5**
 
-- [ ] 7. Enhance sync command tests
-  - [ ] 7.1 Add edge case tests
+- [x] 7. Enhance sync command tests
+  - [x] 7.1 Add edge case tests
     - Test sync with no active defaults (empty result)
     - Test sync with all entries already synced (skip all)
     - Test sync with verbose flag (detailed output)
     - *Requirements: 3.1, 3.5*
-  - [ ] 7.2 Add error handling tests
+  - [x] 7.2 Add error handling tests
     - Test sync with partial failures (error collection)
     - Test sync continues after individual failures
     - *Requirements: 3.3*
-  - [ ] 7.3 Write property test for sync skip and error handling
+  - [x] 7.3 Write property test for sync skip and error handling
     - **Property 2: Sync Skip and Error Handling**
     - **Validates: Requirements 3.2, 3.3**
-  - [ ] 7.4 Enhance property test for dry run idempotence
+  - [x] 7.4 Enhance property test for dry run idempotence
     - **Property 3: Dry Run Idempotence**
     - **Validates: Requirements 3.4**
 
