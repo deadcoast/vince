@@ -512,6 +512,171 @@ Examples:
 | Data directory | `0700` | Full access for owner only |
 
 
+## Schema Validation
+
+The vince CLI provides runtime schema validation through the `vince/validation/schema.py` module. This module validates data files against their JSON Schema definitions to catch corrupted or invalid data early.
+
+### Validation Module
+
+The schema validation module is located at `vince/validation/schema.py` and provides the following functions:
+
+| Function | Purpose | Returns |
+| --- | --- | --- |
+| `load_schema(schema_name)` | Load a JSON schema from `schemas/` directory | `Dict[str, Any]` |
+| `validate_against_schema(data, schema_name)` | Validate data against a named schema | `None` (raises on failure) |
+| `validate_defaults(data)` | Validate defaults.json data | `None` (raises on failure) |
+| `validate_offers(data)` | Validate offers.json data | `None` (raises on failure) |
+| `validate_config(data)` | Validate config.json data | `None` (raises on failure) |
+
+### Function Reference
+
+#### load_schema(schema_name)
+
+Loads a JSON schema from the `schemas/` directory.
+
+```python
+from vince.validation.schema import load_schema
+
+# Load the defaults schema
+schema = load_schema("defaults")
+
+# Load the offers schema
+schema = load_schema("offers")
+
+# Load the config schema
+schema = load_schema("config")
+```
+
+**Parameters:**
+- `schema_name` (str): Name of the schema without `.schema.json` extension (e.g., `"defaults"`, `"offers"`, `"config"`)
+
+**Returns:**
+- `Dict[str, Any]`: Parsed JSON schema dictionary
+
+**Raises:**
+- `FileNotFoundError`: If schema file doesn't exist
+- `json.JSONDecodeError`: If schema file contains invalid JSON
+
+#### validate_defaults(data)
+
+Validates defaults.json data against the defaults schema.
+
+```python
+from vince.validation.schema import validate_defaults
+
+data = {
+    "version": "1.0.0",
+    "defaults": [
+        {
+            "id": "def-md-001",
+            "extension": ".md",
+            "application_path": "/usr/bin/code",
+            "state": "active",
+            "created_at": "2024-01-15T10:30:00Z"
+        }
+    ]
+}
+
+validate_defaults(data)  # Raises DataCorruptedError if invalid
+```
+
+**Raises:**
+- `DataCorruptedError` (VE203): If validation fails
+
+#### validate_offers(data)
+
+Validates offers.json data against the offers schema.
+
+```python
+from vince.validation.schema import validate_offers
+
+data = {
+    "version": "1.0.0",
+    "offers": [
+        {
+            "offer_id": "code-md",
+            "default_id": "def-md-001",
+            "state": "active",
+            "created_at": "2024-01-15T10:30:00Z"
+        }
+    ]
+}
+
+validate_offers(data)  # Raises DataCorruptedError if invalid
+```
+
+**Raises:**
+- `DataCorruptedError` (VE203): If validation fails
+
+#### validate_config(data)
+
+Validates config.json data against the config schema.
+
+```python
+from vince.validation.schema import validate_config
+
+data = {
+    "version": "1.0.0",
+    "verbose": True,
+    "color_theme": "dark"
+}
+
+validate_config(data)  # Raises InvalidConfigOptionError if invalid
+```
+
+**Raises:**
+- `InvalidConfigOptionError` (VE401): If validation fails
+
+### Graceful Degradation
+
+The schema validation module is designed to work gracefully when the `jsonschema` library is not installed. This allows vince to function without validation in minimal installations.
+
+**Behavior when jsonschema is not installed:**
+- All validation functions return immediately without error
+- No validation is performed
+- Data files are loaded and used as-is
+- No warning or error messages are displayed
+
+**Example:**
+
+```python
+# If jsonschema is not installed, this simply returns without error
+from vince.validation.schema import validate_defaults
+
+data = {"version": "1.0.0", "defaults": []}
+validate_defaults(data)  # Returns immediately, no validation performed
+```
+
+To enable schema validation, install the `jsonschema` dependency:
+
+```bash
+# Install with dev dependencies
+pip install vince[dev]
+
+# Or install jsonschema directly
+pip install jsonschema>=4.0.0
+```
+
+### Persistence Layer Integration
+
+Schema validation is integrated into the persistence layer. When data files are loaded, they are automatically validated against their schemas:
+
+| Store | Schema | Error on Failure |
+| --- | --- | --- |
+| `DefaultsStore.load()` | `defaults.schema.json` | `DataCorruptedError` (VE203) |
+| `OffersStore.load()` | `offers.schema.json` | `DataCorruptedError` (VE203) |
+| `get_config()` | `config.schema.json` | `InvalidConfigOptionError` (VE401) |
+
+### Schema Files
+
+The JSON Schema files are located in the `schemas/` directory:
+
+| File | Purpose |
+| --- | --- |
+| `schemas/defaults.schema.json` | Schema for `defaults.json` data file |
+| `schemas/offers.schema.json` | Schema for `offers.json` data file |
+| `schemas/config.schema.json` | Schema for `config.json` configuration file |
+
 ## Cross-References
 
 This document relates to other vince CLI documentation:
@@ -522,4 +687,4 @@ This document relates to other vince CLI documentation:
 | [config.md](config.md) | Configuration options including `data_dir` location |
 | [tables.md](tables.md) | Single Source of Truth for all definitions |
 | [api.md](api.md) | Command interfaces that create and modify schema entries |
-| [errors.md](errors.md) | Error codes for schema validation failures |
+| [errors.md](errors.md) | Error codes for schema validation failures (VE203, VE401) |

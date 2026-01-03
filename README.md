@@ -12,6 +12,20 @@ uv pip install vince
 pip install vince
 ```
 
+### Optional Dependencies
+
+Vince includes optional dependencies for enhanced functionality:
+
+```bash
+# Install with development/validation dependencies (includes jsonschema)
+pip install vince[dev]
+
+# Or install jsonschema separately for schema validation
+pip install jsonschema>=4.0.0
+```
+
+**Schema Validation**: When `jsonschema` is installed, vince validates data files (`defaults.json`, `offers.json`, `config.json`) against their JSON schemas on load. This catches corrupted or invalid data early. If `jsonschema` is not installed, validation is silently skipped and vince operates normally.
+
 ## Quick Start
 
 ```bash

@@ -55,6 +55,35 @@ File errors occur during file system operations.
 | VE202 | `PermissionDeniedError` | Permission denied: cannot access {path} | error | Check file permissions and ownership |
 | VE203 | `DataCorruptedError` | Data file corrupted: {file} | error | Restore from backup or delete and recreate the data file |
 
+#### VE203: DataCorruptedError
+
+Raised when a data file fails JSON schema validation or contains invalid JSON.
+
+**Conditions**:
+- JSON parsing fails (invalid JSON syntax)
+- Schema validation fails for `defaults.json` or `offers.json`
+- Required fields are missing
+- Field values don't match expected types or patterns
+- Unknown fields present when `additionalProperties: false`
+
+**Schema Validation Triggers**:
+- `version` field doesn't match semver pattern `^\d+\.\d+\.\d+$`
+- `state` field contains invalid enum value
+- `extension` field doesn't match pattern `^\.[a-z0-9]+$`
+- `offer_id` field doesn't match pattern `^[a-z][a-z0-9_-]{0,31}$`
+- Required fields missing (e.g., `id`, `extension`, `application_path`, `state`, `created_at`)
+
+**Example**:
+```text
+✗ VE203: Data file corrupted: defaults.json: 'invalid' is not one of ['pending', 'active', 'removed']
+ℹ Restore from backup or delete and recreate the data file
+```
+
+**Recovery**:
+1. Check `{data_dir}/backups/` for recent backup files
+2. Restore from backup: `cp ~/.vince/backups/defaults.{timestamp}.bak ~/.vince/defaults.json`
+3. Or delete and let vince recreate: `rm ~/.vince/defaults.json`
+
 ### State Errors (VE3xx)
 
 State errors occur when attempting invalid state transitions.
@@ -74,6 +103,54 @@ Config errors occur when configuration is invalid or malformed.
 |------|-------|-----------------|----------|-----------------|
 | VE401 | `InvalidConfigOptionError` | Invalid config option: {key} | error | Check config.md for valid configuration options |
 | VE402 | `ConfigMalformedError` | Config file malformed: {file} | error | Fix JSON syntax errors or restore default config |
+
+#### VE401: InvalidConfigOptionError
+
+Raised when configuration data fails JSON schema validation.
+
+**Conditions**:
+- Schema validation fails for `config.json`
+- Unknown configuration option present (when `additionalProperties: false`)
+- Configuration value has wrong type
+- Configuration value outside allowed range or enum values
+
+**Schema Validation Triggers**:
+- `version` field doesn't match semver pattern `^\d+\.\d+\.\d+$`
+- `color_theme` is not one of `default`, `dark`, `light`
+- `max_backups` is not an integer between 0 and 100
+- `verbose`, `backup_enabled`, or `confirm_destructive` is not a boolean
+- Unknown field present in config (e.g., `unknown_option`)
+
+**Example**:
+```text
+✗ VE401: Invalid config option: color_theme
+ℹ Check config.md for valid configuration options
+```
+
+**Example with unknown field**:
+```text
+✗ VE401: Invalid config option: root
+ℹ Check config.md for valid configuration options
+```
+
+**Recovery**:
+1. Check [config.md](config.md) for valid configuration options
+2. Remove or fix the invalid option in `~/.vince/config.json`
+3. Or delete config to use defaults: `rm ~/.vince/config.json`
+
+#### VE402: ConfigMalformedError
+
+Raised when the config file contains invalid JSON syntax (not schema validation).
+
+**Conditions**:
+- JSON parsing fails (syntax error)
+- File is not valid JSON
+
+**Example**:
+```text
+✗ VE402: Config file malformed: ~/.vince/config.json
+ℹ Fix JSON syntax errors or restore default config
+```
 
 ### System Errors (VE5xx)
 

@@ -300,7 +300,385 @@ def create_mock_data_dir(data_dir: Path) -> Callable[..., Path]:
     Returns:
         A callable that returns the data directory path.
     """
-    def mock_get_data_dir(config=None) -> Path:
+    def mock_get_data_dir(config=None) -> Path:  # noqa: ARG001
         return data_dir
 
     return mock_get_data_dir
+
+
+# =============================================================================
+# Trackable Mock Platform Handler Fixture (Requirements: 20.1)
+# =============================================================================
+
+
+@pytest.fixture
+def trackable_mock_handler():
+    """Provide a trackable MockPlatformHandler for detailed verification.
+
+    This fixture provides the custom MockPlatformHandler class that tracks
+    all method calls and supports configurable failure modes.
+
+    Returns:
+        MockPlatformHandler instance with call tracking.
+
+    Requirements: 20.1
+    """
+    from tests.mock_platform_handler import MockPlatformHandler
+
+    return MockPlatformHandler()
+
+
+# =============================================================================
+# Corrupted Data Fixtures (Requirements: 2.4, 2.5, 2.6, 2.7, 2.8)
+# =============================================================================
+
+
+@pytest.fixture
+def corrupted_defaults_json(tmp_path: Path) -> Path:
+    """Provide data directory with corrupted defaults.json.
+
+    Creates a .vince directory with an invalid JSON file for testing
+    error handling of corrupted data files.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory with corrupted defaults.json.
+
+    Requirements: 2.4
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    # Write invalid JSON (missing closing brace)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": [')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    return data_dir
+
+
+@pytest.fixture
+def corrupted_defaults_invalid_state(tmp_path: Path) -> Path:
+    """Provide data directory with defaults.json containing invalid state.
+
+    Creates a .vince directory with a defaults.json file that has an
+    invalid state value for testing schema validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 2.5
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    defaults_data = {
+        "version": "1.1.0",
+        "defaults": [
+            {
+                "id": "def-md-000",
+                "extension": ".md",
+                "application_path": "/usr/bin/vim",
+                "application_name": "vim",
+                "state": "invalid_state",  # Invalid state value
+                "os_synced": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    return data_dir
+
+
+@pytest.fixture
+def corrupted_defaults_missing_field(tmp_path: Path) -> Path:
+    """Provide data directory with defaults.json missing required field.
+
+    Creates a .vince directory with a defaults.json file that is missing
+    a required field for testing schema validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 2.6
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    defaults_data = {
+        "version": "1.1.0",
+        "defaults": [
+            {
+                "id": "def-md-000",
+                # Missing "extension" field
+                "application_path": "/usr/bin/vim",
+                "application_name": "vim",
+                "state": "active",
+                "os_synced": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    return data_dir
+
+
+@pytest.fixture
+def corrupted_offers_json(tmp_path: Path) -> Path:
+    """Provide data directory with corrupted offers.json.
+
+    Creates a .vince directory with an invalid JSON file for testing
+    error handling of corrupted offer data files.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory with corrupted offers.json.
+
+    Requirements: 2.7
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    # Write invalid JSON (missing closing bracket)
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": [')
+    return data_dir
+
+
+@pytest.fixture
+def corrupted_offers_invalid_pattern(tmp_path: Path) -> Path:
+    """Provide data directory with offers.json containing invalid offer_id pattern.
+
+    Creates a .vince directory with an offers.json file that has an
+    invalid offer_id pattern for testing schema validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 2.8
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    offers_data = {
+        "version": "1.0.0",
+        "offers": [
+            {
+                "offer_id": "1invalid",  # Invalid: starts with number
+                "default_id": "def-md-000",
+                "state": "created",
+                "auto_created": False,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "offers.json").write_text(json.dumps(offers_data))
+    return data_dir
+
+
+# =============================================================================
+# Invalid Config Fixtures (Requirements: 4.1, 4.2, 4.3, 4.4)
+# =============================================================================
+
+
+@pytest.fixture
+def invalid_config_unknown_option(tmp_path: Path) -> Path:
+    """Provide data directory with config.json containing unknown option.
+
+    Creates a .vince directory with a config.json file that has an
+    unknown configuration option for testing config validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 4.1
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    config_data = {
+        "version": "1.0.0",
+        "unknown_option": "some_value",  # Unknown option
+    }
+    (data_dir / "config.json").write_text(json.dumps(config_data))
+    return data_dir
+
+
+@pytest.fixture
+def invalid_config_color_theme(tmp_path: Path) -> Path:
+    """Provide data directory with config.json containing invalid color_theme.
+
+    Creates a .vince directory with a config.json file that has an
+    invalid color_theme value for testing config validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 4.2
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    config_data = {
+        "version": "1.0.0",
+        "color_theme": "invalid_theme",  # Invalid theme value
+    }
+    (data_dir / "config.json").write_text(json.dumps(config_data))
+    return data_dir
+
+
+@pytest.fixture
+def invalid_config_max_backups(tmp_path: Path) -> Path:
+    """Provide data directory with config.json containing out-of-range max_backups.
+
+    Creates a .vince directory with a config.json file that has an
+    out-of-range max_backups value for testing config validation.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 4.3
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    config_data = {
+        "version": "1.0.0",
+        "max_backups": 150,  # Out of range (0-100)
+    }
+    (data_dir / "config.json").write_text(json.dumps(config_data))
+    return data_dir
+
+
+@pytest.fixture
+def invalid_config_malformed_json(tmp_path: Path) -> Path:
+    """Provide data directory with malformed config.json.
+
+    Creates a .vince directory with a config.json file that has
+    invalid JSON syntax for testing config error handling.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 4.4
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    (data_dir / "defaults.json").write_text('{"version": "1.1.0", "defaults": []}')
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    # Write invalid JSON (missing closing brace)
+    (data_dir / "config.json").write_text('{"version": "1.0.0", "verbose": true')
+    return data_dir
+
+
+# =============================================================================
+# Active Default Fixtures for State Testing
+# =============================================================================
+
+
+@pytest.fixture
+def data_dir_with_active_default(tmp_path: Path) -> Path:
+    """Provide data directory with an active default for state testing.
+
+    Creates a .vince directory with an active default entry for testing
+    state transition errors like DefaultExistsError.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 3.1, 3.2
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    defaults_data = {
+        "version": "1.1.0",
+        "defaults": [
+            {
+                "id": "def-md-000",
+                "extension": ".md",
+                "application_path": "/usr/bin/vim",
+                "application_name": "vim",
+                "state": "active",
+                "os_synced": True,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+    (data_dir / "offers.json").write_text('{"version": "1.0.0", "offers": []}')
+    return data_dir
+
+
+@pytest.fixture
+def data_dir_with_active_offer(tmp_path: Path) -> Path:
+    """Provide data directory with an active offer for state testing.
+
+    Creates a .vince directory with an active offer entry for testing
+    state transition errors like OfferInUseError.
+
+    Args:
+        tmp_path: Pytest's temporary directory fixture.
+
+    Returns:
+        Path to the created .vince data directory.
+
+    Requirements: 3.5, 3.6
+    """
+    data_dir = tmp_path / ".vince"
+    data_dir.mkdir(exist_ok=True)
+    defaults_data = {
+        "version": "1.1.0",
+        "defaults": [
+            {
+                "id": "def-md-000",
+                "extension": ".md",
+                "application_path": "/usr/bin/vim",
+                "application_name": "vim",
+                "state": "active",
+                "os_synced": True,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "defaults.json").write_text(json.dumps(defaults_data))
+    offers_data = {
+        "version": "1.0.0",
+        "offers": [
+            {
+                "offer_id": "vim-md",
+                "default_id": "def-md-000",
+                "state": "active",
+                "auto_created": True,
+                "created_at": "2024-01-01T00:00:00+00:00",
+            }
+        ],
+    }
+    (data_dir / "offers.json").write_text(json.dumps(offers_data))
+    return data_dir
