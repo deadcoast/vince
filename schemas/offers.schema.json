@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vince.cli/schemas/offers.json",
+  "title": "Vince Offers",
+  "description": "Schema for storing custom shortcut/alias definitions",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version in semver format"
+    },
+    "offers": {
+      "type": "array",
+      "description": "Array of offer entries",
+      "items": {
+        "$ref": "#/definitions/OfferEntry"
+      }
+    }
+  },
+  "required": ["version", "offers"],
+  "additionalProperties": false,
+  "definitions": {
+    "OfferEntry": {
+      "type": "object",
+      "description": "A single offer/alias definition",
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,31}$",
+          "description": "Unique offer identifier (lowercase, alphanumeric, hyphens, underscores)"
+        },
+        "default_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to the associated default entry ID"
+        },
+        "state": {
+          "type": "string",
+          "enum": ["created", "active", "rejected"],
+          "description": "Current lifecycle state of the offer"
+        },
+        "auto_created": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this offer was auto-created by slap -set"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Optional human-readable description"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when entry was created"
+        },
+        "used_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when offer was last used"
+        }
+      },
+      "required": ["offer_id", "default_id", "state", "created_at"],
+      "additionalProperties": false
+    }
+  }
+}

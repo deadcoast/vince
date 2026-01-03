@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vince.cli/schemas/config.json",
+  "title": "Vince Configuration",
+  "description": "Schema for user configuration options",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version in semver format"
+    },
+    "data_dir": {
+      "type": "string",
+      "default": "~/.vince",
+      "description": "Data storage directory path"
+    },
+    "verbose": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable verbose output by default"
+    },
+    "color_theme": {
+      "type": "string",
+      "enum": ["default", "dark", "light"],
+      "default": "default",
+      "description": "Console color theme"
+    },
+    "backup_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable automatic backups before writes"
+    },
+    "max_backups": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 5,
+      "description": "Maximum number of backup files to retain"
+    },
+    "confirm_destructive": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require confirmation for destructive operations"
+    }
+  },
+  "required": ["version"],
+  "additionalProperties": false
+}

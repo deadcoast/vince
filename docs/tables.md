@@ -26,31 +26,31 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | --- | --- | --- | --- |
 | `example` | eg | eg01 | Sample or instance used for illustration |
 | `application` | ap | ap01 | Program or executable to set as default |
-| `extension` | ex | ex01 | File type suffix (e.g., .md, .py) |
-| `default` | dlt | dlt01 | The preferred application for a file type |
-| `short_id` | sid | sid01 | Abbreviated identifier (2-4 characters) |
-| `long_id` | lid | lid01 | Full-length identifier |
+| `extension` | xt | xt01 | File type suffix (e.g., .md, .py) |
+| `default` | df | df01 | The preferred application for a file type |
+| `short_id` | shid | shid01 | Abbreviated identifier (2-4 characters) |
+| `long_id` | loid | loid01 | Full-length identifier |
 | `id` | id | id01 | Main identification of an object |
-| `number` | num | num01 | Numerical identification variable |
-| `rule_id` | rid | rid01 | Rule identifier combining sid + number |
+| `number` | nu | nu01 | Numerical identification variable |
+| `rule_id` | ruid | ruid01 | Rule identifier combining sid + number |
 | `command` | cm | cm01 | CLI action verb |
 | `flag` | fl | fl01 | CLI modifier with - or -- prefix |
 | `operator` | op | op01 | CLI symbol with special meaning |
 | `offer` | ofr | ofr01 | Custom shortcut/alias for defaults |
 | `path` | pa | pa01 | File system location of application |
-| `step` | st | st01 | Sequential action in a workflow |
-| `error` | err | err01 | Error condition with code, message, and recovery |
-| `error_code` | ec | ec01 | Unique identifier for error condition (VE###) |
+| `step` | stp | stp01 | Sequential action in a workflow |
+| `error` | er | er01 | Error condition with code, message, and recovery |
+| `error_code` | erco | erco01 | Unique identifier for error condition (VE###) |
 | `state` | sta | sta01 | Lifecycle state of an entity (default or offer) |
 | `transition` | trn | trn01 | State change triggered by a command |
 | `config` | cfg | cfg01 | Configuration option for CLI behavior |
-| `schema` | sch | sch01 | JSON schema defining data structure |
-| `severity` | sev | sev01 | Error severity level (error, warning, info) |
-| `recovery` | rec | rec01 | Recommended action to resolve an error |
-| `validation` | val | val01 | Rule for checking data correctness |
-| `persistence` | per | per01 | Data storage and retrieval mechanism |
-| `backup` | bak | bak01 | Copy of data file for recovery purposes |
-| `theme` | thm | thm01 | Console color scheme (default, dark, light) |
+| `schema` | sc | sc01 | JSON schema defining data structure |
+| `severity` | sv | sv01 | Error severity level (error, warning, info) |
+| `recovery` | rc | rc01 | Recommended action to resolve an error |
+| `validation` | vl | vl01 | Rule for checking data correctness |
+| `persistence` | ps | ps01 | Data storage and retrieval mechanism |
+| `backup` | bk | bk01 | Copy of data file for recovery purposes |
+| `theme` | tm | tm01 | Console color scheme (default, dark, light) |
 
 ## COMMANDS
 
@@ -74,45 +74,45 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 | `txt` | text | .txt | tx | --txt | --text |
 | `js` | javascript | .js | js | --js | --javascript |
 | `html` | html | .html | ht | --html | --html |
-| `css` | css | .css | cs | --css | --css |
-| `json` | json | .json | jn | --json | --json |
-| `yml` | yaml | .yml | yl | --yml | --yaml |
+| `css` | css | .css | css | --css | --css |
+| `json` | json | .json | jsn | --json | --json |
+| `yml` | yaml | .yml | ym | --yml | --yaml |
 | `yaml` | yaml | .yaml | ya | --yaml | --yaml |
 | `xml` | xml | .xml | xm | --xml | --xml |
-| `csv` | csv | .csv | cv | --csv | --csv |
+| `csv` | csv | .csv | csv | --csv | --csv |
 | `sql` | sql | .sql | sq | --sql | --sql |
 
 ## UTILITY_FLAGS
 
 | id | sid | short | long | description |
 | --- | --- | --- | --- | --- |
-| `help` | he | -h | --help | Display help information |
-| `version` | ve | -v | --version | Display version information |
-| `verbose` | vb | -vb | --verbose | Enable verbose output |
-| `debug` | db | -db | --debug | Enable debug mode |
-| `trace` | tr | -tr | --trace | Enable trace logging |
+| `help` | hlp | -h | --help | Display help information |
+| `version` | ver | -v | --version | Display version information |
+| `verbose` | vrb | -vb | --verbose | Enable verbose output |
+| `debug` | dbg | -db | --debug | Enable debug mode |
+| `trace` | trc | -tr | --trace | Enable trace logging |
 
 ## QOL_FLAGS
 
 | id | sid | short | description |
 | --- | --- | --- | --- |
-| `set` | se | -set | Set a file extension as default |
-| `forget` | fo | -forget | Forget a file extension as default |
-| `slap` | sl | -slap | Set a file extension as default |
-| `chop` | ch | -chop | Forget a file extension as default |
-| `offer` | of | -offer | Create a custom offer |
-| `reject` | re | -reject | Remove a custom offer |
+| `set` | qset | -set | Set a file extension as default |
+| `forget` | qfgt | -forget | Forget a file extension as default |
+| `slap` | qslp | -slap | Set a file extension as default |
+| `chop` | qchp | -chop | Forget a file extension as default |
+| `offer` | qofr | -offer | Create a custom offer |
+| `reject` | qrjt | -reject | Remove a custom offer |
 
 ## LIST_FLAGS
 
 | id | sid | short | description |
 | --- | --- | --- | --- |
-| `applications` | app | -app | List all tracked applications |
-| `commands` | cmd | -cmd | List all available commands |
-| `extensions` | ext | -ext | List all tracked extensions |
-| `defaults` | def | -def | List all set defaults |
-| `offers` | off | -off | List all custom offers |
-| `all` | all | -all | List all subsections |
+| `applications` | lapp | -app | List all tracked applications |
+| `commands` | lcmd | -cmd | List all available commands |
+| `extensions` | lext | -ext | List all tracked extensions |
+| `defaults` | ldef | -def | List all set defaults |
+| `offers` | loff | -off | List all custom offers |
+| `all` | lall | -all | List all subsections |
 
 ## OPERATORS
 
@@ -160,26 +160,26 @@ Both follow the same principle: provide a concise shorthand for efficiency while
 
 | id | sid | entity | description |
 | --- | --- | --- | --- |
-| `none` | def-none | default | No default exists for the extension |
-| `pending` | def-pend | default | Default identified but not yet set as active |
-| `active` | def-actv | default | Default is set and actively used |
-| `removed` | def-rmvd | default | Default was removed but record retained |
-| `none` | off-none | offer | No offer exists with the given ID |
-| `created` | off-crtd | offer | Offer created but not yet used |
-| `active` | off-actv | offer | Offer has been used at least once |
-| `rejected` | off-rjct | offer | Offer was rejected/removed |
+| `none` | def-no | default | No default exists for the extension |
+| `pending` | def-pe | default | Default identified but not yet set as active |
+| `active` | def-ac | default | Default is set and actively used |
+| `removed` | def-re | default | Default was removed but record retained |
+| `none` | off-no | offer | No offer exists with the given ID |
+| `created` | off-cr | offer | Offer created but not yet used |
+| `active` | off-ac | offer | Offer has been used at least once |
+| `rejected` | off-re | offer | Offer was rejected/removed |
 
 ## CONFIG_OPTIONS
 
 | key | sid | type | default | description |
 | --- | --- | --- | --- | --- |
-| `version` | cfg-ver | string | Required | Schema version in semver format |
-| `data_dir` | cfg-dir | string | `~/.vince` | Data storage directory path |
-| `verbose` | cfg-vb | boolean | `false` | Enable verbose output by default |
-| `color_theme` | cfg-thm | enum | `default` | Console color theme (default/dark/light) |
-| `backup_enabled` | cfg-bak | boolean | `true` | Enable automatic backups before writes |
-| `max_backups` | cfg-max | integer | `5` | Maximum number of backup files to retain (0-100) |
-| `confirm_destructive` | cfg-cfm | boolean | `true` | Require confirmation for destructive operations |
+| `version` | cver | string | Required | Schema version in semver format |
+| `data_dir` | cdir | string | `~/.vince` | Data storage directory path |
+| `verbose` | cvrb | boolean | `false` | Enable verbose output by default |
+| `color_theme` | cthm | enum | `default` | Console color theme (default/dark/light) |
+| `backup_enabled` | cbak | boolean | `true` | Enable automatic backups before writes |
+| `max_backups` | cmax | integer | `5` | Maximum number of backup files to retain (0-100) |
+| `confirm_destructive` | ccfm | boolean | `true` | Require confirmation for destructive operations |
 
 ## RULES
 

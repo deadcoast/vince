@@ -105,8 +105,12 @@ def create_backup(path: Path, backup_dir: Path, max_backups: int = 5) -> None:
         backups.pop(0)
 
 
-def load_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
-    """Load JSON file with fallback to default.
+def load_json(
+    path: Path,
+    default: Dict[str, Any],
+    schema_name: str | None = None,
+) -> Dict[str, Any]:
+    """Load JSON file with fallback to default and optional schema validation.
 
     Attempts to load and parse a JSON file. If the file doesn't exist,
     returns a deep copy of the default schema. If the file is corrupted
@@ -115,17 +119,30 @@ def load_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         path: Path to the JSON file
         default: Default schema to return if file doesn't exist
+        schema_name: Optional schema name for validation (e.g., 'defaults', 'offers', 'config')
 
     Returns:
         Parsed JSON data or deep copy of default schema
 
     Raises:
-        DataCorruptedError: If file exists but contains invalid JSON
+        DataCorruptedError: If file exists but contains invalid JSON or fails schema validation
     """
     if not path.exists():
         return copy.deepcopy(default)
 
     try:
-        return json.loads(path.read_text())
+        data = json.loads(path.read_text())
     except json.JSONDecodeError:
         raise DataCorruptedError(str(path))
+
+    # Validate against schema if specified
+    if schema_name:
+        try:
+            from vince.validation.schema import validate_against_schema
+
+            validate_against_schema(data, schema_name)
+        except ImportError:
+            # jsonschema not installed, skip validation
+            pass
+
+    return data

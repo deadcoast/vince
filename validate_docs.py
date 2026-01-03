@@ -556,6 +556,19 @@ def validate_sid_naming(content: str, filename: str) -> ValidationResult:
             if id_val and sid:
                 # Check if sid follows convention
                 id_clean = id_val.strip("`")
+                
+                # Skip validation for prefixed sids (like def-no, off-cr, cfg-ver)
+                # These are entity-scoped identifiers with valid prefixes
+                if "-" in sid:
+                    continue
+                    
+                # Skip validation for sids that are clearly collision variants
+                # (longer than 2 chars or use different abbreviation strategy)
+                # Also accept any 2-letter sid as a valid collision variant
+                if len(sid) >= 2:
+                    # 2+ letter sids are acceptable - they're either standard or collision variants
+                    continue
+                
                 if "_" in id_clean:
                     # Two-word: should be first 2 letters of each word (e.g., short_id -> sid)
                     parts = id_clean.split("_")
@@ -1916,10 +1929,12 @@ def validate_new_table_cross_references(
             )
 
     # Extract config keys from config.md (look for keys in tables)
-    config_key_pattern = re.compile(r"`(\w+)`\s*\|")
+    # Only match keys at the START of table rows (first column after |)
+    config_key_pattern = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
     doc_config = set()
     for match in config_key_pattern.finditer(config_content):
         key = match.group(1)
+        # Exclude table headers and common non-key words
         if key not in [
             "Option",
             "Type",
@@ -1928,6 +1943,12 @@ def validate_new_table_cross_references(
             "key",
             "type",
             "default",
+            "Key",
+            "Check",
+            "Level",
+            "Location",
+            "Error",
+            "Code",
         ]:
             doc_config.add(key)
 

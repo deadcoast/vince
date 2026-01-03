@@ -13,11 +13,11 @@ The vince CLI uses a layered configuration system that allows settings to be def
 
 ### Configuration Levels
 
-| Level | Location | Purpose | sid |
-|-------|----------|---------|-----|
-| Default | Built-in | Hardcoded defaults in application code | cfg-def |
-| User | `~/.vince/config.json` | User-wide settings across all projects | cfg-usr |
-| Project | `./.vince/config.json` | Project-specific overrides | cfg-prj |
+| Level | Location | Purpose |
+|-------|----------|---------|
+| Default | Built-in | Hardcoded defaults in application code |
+| User | `~/.vince/config.json` | User-wide settings across all projects |
+| Project | `./.vince/config.json` | Project-specific overrides |
 
 ### Discovery Order
 
@@ -58,13 +58,13 @@ All configuration options with their types, default values, and descriptions:
 
 | Key | Type | Default | Description | sid |
 |-----|------|---------|-------------|-----|
-| `version` | string | Required | Schema version in semver format | cfg-ver |
-| `data_dir` | string | `~/.vince` | Data storage directory path | cfg-dir |
-| `verbose` | boolean | `false` | Enable verbose output by default | cfg-vb |
-| `color_theme` | enum | `default` | Console color theme | cfg-thm |
-| `backup_enabled` | boolean | `true` | Enable automatic backups before writes | cfg-bak |
-| `max_backups` | integer | `5` | Maximum number of backup files to retain | cfg-max |
-| `confirm_destructive` | boolean | `true` | Require confirmation for destructive operations | cfg-cfm |
+| `version` | string | Required | Schema version in semver format | cver |
+| `data_dir` | string | `~/.vince` | Data storage directory path | cdir |
+| `verbose` | boolean | `false` | Enable verbose output by default | cvrb |
+| `color_theme` | enum | `default` | Console color theme | cthm |
+| `backup_enabled` | boolean | `true` | Enable automatic backups before writes | cbak |
+| `max_backups` | integer | `5` | Maximum number of backup files to retain | cmax |
+| `confirm_destructive` | boolean | `true` | Require confirmation for destructive operations | ccfm |
 
 ### Option Details
 

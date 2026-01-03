@@ -29,10 +29,10 @@ The Default entity represents an association between an application executable a
 
 | State | sid | Description | Entry Condition |
 |-------|-----|-------------|-----------------|
-| none | def-none | No default exists for the extension | Initial state / after cleanup |
-| pending | def-pend | Default identified but not yet set as active | `slap` without `-set` flag |
-| active | def-actv | Default is set and actively used | `slap -set` or `set` command |
-| removed | def-rmvd | Default was removed but record retained | `chop` or `forget` command |
+| none | def-no | No default exists for the extension | Initial state / after cleanup |
+| pending | def-pe | Default identified but not yet set as active | `slap` without `-set` flag |
+| active | def-ac | Default is set and actively used | `slap -set` or `set` command |
+| removed | def-re | Default was removed but record retained | `chop` or `forget` command |
 
 ### Default State Descriptions
 
@@ -240,10 +240,10 @@ The Offer entity represents a custom shortcut or alias that provides quick acces
 
 | State | sid | Description | Entry Condition |
 |-------|-----|-------------|-----------------|
-| none | off-none | No offer exists with the given ID | Initial state / after cleanup |
-| created | off-crtd | Offer created but not yet used | `offer` command or auto-create |
-| active | off-actv | Offer has been used at least once | First use of the offer |
-| rejected | off-rjct | Offer was rejected/removed | `reject` command |
+| none | off-no | No offer exists with the given ID | Initial state / after cleanup |
+| created | off-cr | Offer created but not yet used | `offer` command or auto-create |
+| active | off-ac | Offer has been used at least once | First use of the offer |
+| rejected | off-re | Offer was rejected/removed | `reject` command |
 
 ### Offer State Descriptions
 
@@ -519,7 +519,7 @@ When an invalid transition is attempted, the system:
 
 | Document | Relevance |
 |----------|-----------|
-| [tables.md](tables.md) | STATES table with all state definitions (def-none, def-pend, def-actv, def-rmvd, off-none, off-crtd, off-actv, off-rjct) |
+| [tables.md](tables.md) | STATES table with all state definitions (def-no, def-pe, def-ac, def-re, off-no, off-cr, off-ac, off-re) |
 | [errors.md](errors.md) | Error codes for invalid transitions (VE301, VE302, VE303, VE304, VE104) |
 | [schemas.md](schemas.md) | JSON schemas showing `state` field in DefaultEntry and OfferEntry |
 | [api.md](api.md) | Command interface specifications that trigger state transitions |
