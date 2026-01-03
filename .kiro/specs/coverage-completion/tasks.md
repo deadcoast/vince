@@ -99,27 +99,27 @@ This implementation plan addresses the remaining gaps to achieve production read
     - **Property 4: List Mismatch Detection**
     - **Validates: Requirements 4.4**
 
-- [ ] 10. Checkpoint - Verify list command coverage
+- [x] 10. Checkpoint - Verify list command coverage
   - Run `uv run pytest tests/test_list_command.py -v --cov=vince/commands/list_cmd`
   - Ensure coverage >= 80%
   - Ask the user if questions arise
 
-- [ ] 11. Add schema migration tests
-  - [ ] 11.1 Add migration unit tests
+- [x] 11. Add schema migration tests
+  - [x] 11.1 Add migration unit tests
     - Test v1.0.0 to v1.1.0 migration adds os_synced field
     - Test v1.0.0 to v1.1.0 migration updates version
     - Test v1.1.0 files skip migration
     - *Requirements: 8.4*
-  - [ ] 11.2 Write property test for schema migration
+  - [x] 11.2 Write property test for schema migration
     - **Property 5: Schema Migration Correctness**
     - **Validates: Requirements 8.4**
 
-- [ ] 12. Checkpoint - Verify overall coverage
+- [x] 12. Checkpoint - Verify overall coverage
   - Run `uv run pytest --cov=vince --cov-report=term-missing`
   - Ensure overall coverage >= 85%
   - Ask the user if questions arise
 
-- [ ] 13. Update os-integration task tracking
+- [-] 13. Update os-integration task tracking
   - [ ] 13.1 Mark checkpoint 5 as complete
     - Update `.kiro/specs/os-integration/tasks.md`
     - Change `- [ ] 5.` to `- [x] 5.`
