@@ -119,20 +119,20 @@ This implementation plan addresses the remaining gaps to achieve production read
   - Ensure overall coverage >= 85%
   - Ask the user if questions arise
 
-- [-] 13. Update os-integration task tracking
-  - [ ] 13.1 Mark checkpoint 5 as complete
+- [x] 13. Update os-integration task tracking
+  - [x] 13.1 Mark checkpoint 5 as complete
     - Update `.kiro/specs/os-integration/tasks.md`
     - Change `- [ ] 5.` to `- [x] 5.`
     - *Requirements: 9.1*
-  - [ ] 13.2 Mark task 11.2 as complete
+  - [x] 13.2 Mark task 11.2 as complete
     - Schema migration is already implemented
     - Change `- [-] 11.2` to `- [x] 11.2`
     - *Requirements: 9.2*
-  - [ ] 13.3 Mark parent task 11 as complete
+  - [x] 13.3 Mark parent task 11 as complete
     - Change `- [-] 11.` to `- [x] 11.`
     - *Requirements: 9.3*
 
-- [ ] 14. Final validation checkpoint
+- [x] 14. Final validation checkpoint
   - Run `uv run mypy vince/ --ignore-missing-imports` (0 errors)
   - Run `uv run pytest --cov=vince` (85%+ coverage, all tests pass)
   - Run `uv run ruff check vince/` (no errors)

@@ -91,7 +91,7 @@ This plan implements cross-platform OS integration for vince, adding the ability
     - **Property 3: Set-Query Round Trip (Windows)**
     - **Validates: Requirements 3.1, 3.5**
 
-- [ ] 5. Checkpoint - Verify platform handlers work independently
+- [x] 5. Checkpoint - Verify platform handlers work independently
   - Ensure all tests pass, ask the user if questions arise.
   - Test macOS handler on macOS (or with mocks)
   - Test Windows handler on Windows (or with mocks)
@@ -163,14 +163,14 @@ This plan implements cross-platform OS integration for vince, adding the ability
   - Run full test suite on both platforms (or with mocks)
   - Verify sync command works end-to-end
 
-- [-] 11. Update persistence layer for OS sync tracking
+- [x] 11. Update persistence layer for OS sync tracking
   - [x] 11.1 Update `vince/persistence/defaults.py` schema
     - Add `os_synced` boolean field
     - Add `os_synced_at` timestamp field
     - Add `previous_os_default` string field
     - Update `add()` and `update_state()` to handle new fields
     - _Requirements: 9.1_
-  - [-] 11.2 Update schema version to 1.1.0
+  - [x] 11.2 Update schema version to 1.1.0
     - Add migration from 1.0.0 to 1.1.0
     - Set default values for new fields
     - _Requirements: 9.1_
