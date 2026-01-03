@@ -80,22 +80,22 @@ This implementation plan addresses the remaining gaps to achieve production read
     - **Property 3: Dry Run Idempotence**
     - **Validates: Requirements 3.4**
 
-- [ ] 8. Checkpoint - Verify sync command coverage
+- [x] 8. Checkpoint - Verify sync command coverage
   - Run `uv run pytest tests/test_sync_command.py -v --cov=vince/commands/sync`
   - Ensure coverage >= 80%
   - Ask the user if questions arise
 
-- [ ] 9. Enhance list command tests
-  - [ ] 9.1 Add subsection flag tests
+- [x] 9. Enhance list command tests
+  - [x] 9.1 Add subsection flag tests
     - Test list with `-app` flag
     - Test list with `-cmd` flag
     - Test list with `-ext` flag
     - *Requirements: 4.1, 4.2, 4.3*
-  - [ ] 9.2 Add OS integration tests
+  - [x] 9.2 Add OS integration tests
     - Test list with OS default mismatch (warning indicator)
     - Test list with OS query failure ("unknown" fallback)
     - *Requirements: 4.4, 4.5*
-  - [ ] 9.3 Write property test for mismatch detection
+  - [x] 9.3 Write property test for mismatch detection
     - **Property 4: List Mismatch Detection**
     - **Validates: Requirements 4.4**
 
